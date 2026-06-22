@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/Infra/">
+    <File Path="Infra/Resources.bicep" />
+    <File Path="Main.bicep" />
+  </Folder>
+  <Folder Name="/Infra/Modules/">
+    <File Path="Infra/Modules/AppInsight.bicep" />
+    <File Path="Infra/Modules/ContainerApps.bicep" />
+    <File Path="Infra/Modules/ContainerEnvironment.bicep" />
+    <File Path="Infra/Modules/ContainerRegistry.bicep" />
+    <File Path="Infra/Modules/LogAnalytics.bicep" />
+  </Folder>
+  <Folder Name="/Infra/Params/">
+    <File Path="Infra/Params/parms.bicepparam" />
+  </Folder>
+  <Project Path="ArtAuction.API/ArtAuction.API.csproj" />
+  <Project Path="ArtAuction.Consumer/ArtAuction.Consumer.csproj" Id="7a52ef6b-431d-4adb-8e79-eb177923e649" />
+  <Project Path="ArtAuction.Contract/ArtAuction.Contract.csproj" />
+</Solution>

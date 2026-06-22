@@ -1,0 +1,78 @@
+@description('Log Analytics Workspace Name')
+param logAnalyticsName string
+
+@description('The name of the Azure Container Registry')
+param appInsightsName string
+
+@description('The name of the Azure Container Registry')
+param acrName string
+
+@description('Managed Environment Name')
+param environmentName string
+
+@description('Service Bus name')
+param serviceBusName string
+
+@description('Storage Account')
+param storageAccountName string
+
+module logAnalytics 'Modules/LogAnalytics.bicep' = {
+  name: logAnalyticsName
+  params: {
+    logAnalyticsName: logAnalyticsName
+  }
+}
+
+module appInsights 'Modules/AppInsight.bicep' = {
+  name: appInsightsName
+  params: {
+    appInsightsName: appInsightsName
+    workspaceResourceId: logAnalytics.outputs.resourceId
+  }
+}
+
+module containerRegistry 'Modules/ContainerRegistry.bicep' = {
+  name: acrName
+  params: {
+    acrName: acrName
+  }
+}
+
+module containerEnvironment 'Modules/ContainerEnvironment.bicep' = {
+  name: environmentName
+  params: {
+    environmentName: environmentName
+    logAnalyticsWorkspaceResourceId: logAnalytics.outputs.resourceId
+    appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
+  }
+}
+
+var appNames = [
+  'art-auction-api'
+  'art-auction-consumer'
+]
+
+module container 'Modules/ContainerApps.bicep' = [
+  for (appName, i) in appNames: {
+    name: 'container-${appName}'
+    params: {
+      containerAppsName: appName
+      workspaceResourceId: logAnalytics.outputs.resourceId
+      environmentResourceId: containerEnvironment.outputs.resourceId
+    }
+  }
+]
+
+module serviceBus 'Modules/ServiceBus.bicep' = {
+  name: serviceBusName
+  params: {
+    serviceBusName: serviceBusName
+  }
+}
+
+module storageAccount 'Modules/storageAccount.bicep' = {
+  name: storageAccountName
+  params: {
+    storageAccountName: storageAccountName
+  }
+}

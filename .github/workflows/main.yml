@@ -1,0 +1,28 @@
+name: Azure Container Apps Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and deploy Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}
+          dockerfilePath: ArtAuction.API/Dockerfile
+          acrName: masstransitcontainerregistry
+          containerAppName: art-auction-api
+          resourceGroup: MassTransit-Playground
+          imageToBuild: masstransitcontainerregistry.azurecr.io/art-auction-api:${{ github.sha }}

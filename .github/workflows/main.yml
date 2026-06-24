@@ -21,6 +21,6 @@ jobs:
         uses: azure/container-apps-deploy-action@v1
         with:
           appSourcePath: ${{ github.workspace }}/src
-          acrName: <ACR_NAME>
-          containerAppName: my-container-app
-          resourceGroup: my-container-app-rg
+          acrName: masstransitcontainerregistry
+          containerAppName: art-auction-api
+          resourceGroup: MassTransit-Playground

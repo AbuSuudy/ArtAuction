@@ -25,3 +25,4 @@ jobs:
           acrName: masstransitcontainerregistry
           containerAppName: art-auction-api
           resourceGroup: MassTransit-Playground
+          imageToBuild: masstransitcontainerregistry.azurecr.io/art-auction-api:${{ github.sha }}

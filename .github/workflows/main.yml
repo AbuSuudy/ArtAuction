@@ -26,3 +26,4 @@ jobs:
           containerAppName: art-auction-api
           resourceGroup: MassTransit-Playground
           imageToBuild: masstransitcontainerregistry.azurecr.io/art-auction-api:${{ github.sha }}
+          dockerBuildArgs: --platform linux/amd64

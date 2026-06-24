@@ -24,16 +24,11 @@ namespace ArtAuction.Contract
 
         public Guid Id { get; set; }
         public decimal Price { get; set; }
-
         public required string Name { get; set; }
-
         public required string ArtWork { get; set; }
-
         // store in pence
         public long Bid { get; set; }
-
         public BidStaus BidStaus { get; set; }
-
         public string PartitionKey { get; set; }
         public string RowKey { get; set; }
         public DateTimeOffset? Timestamp { get; set; }
@@ -54,16 +49,12 @@ namespace ArtAuction.Contract
             PartitionKey = partitionKey;
             RowKey = rowKey;
         }
-
         public BidCompensationEntity() { }
 
         public Guid Id { get; set; }
-
         // store in pence
         public long Bid { get; set; }
-
         public BidCompensationStaus BidCompensationStaus { get; set; }
-
         public string PartitionKey { get; set; }
         public string RowKey { get; set; }
         public DateTimeOffset? Timestamp { get; set; }

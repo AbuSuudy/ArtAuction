@@ -8,3 +8,5 @@ module avmContainerRegistry 'br/public:avm/res/container-registry/registry:0.12.
     acrSku: 'Standard'
   }
 }
+
+output containerRegistryResourceId string = avmContainerRegistry.outputs.resourceId

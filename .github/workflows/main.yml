@@ -20,7 +20,8 @@ jobs:
       - name: Build and deploy Container App
         uses: azure/container-apps-deploy-action@v1
         with:
-          appSourcePath: ${{ github.workspace }}/ArtAuction.API
+          appSourcePath: ${{ github.workspace }}
+          dockerfilePath: ArtAuction.API/Dockerfile
           acrName: masstransitcontainerregistry
           containerAppName: art-auction-api
           resourceGroup: MassTransit-Playground

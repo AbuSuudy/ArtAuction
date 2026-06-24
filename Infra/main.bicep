@@ -1,3 +1,5 @@
+//az deployment sub create --name ExampleDeployment --location uksouth --template-file Infra\main.bicep --parameters Infra\Params\parms.bicepparam
+
 targetScope = 'subscription'
 
 @description('Log Analytics Workspace Name')

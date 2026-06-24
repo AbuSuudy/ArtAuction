@@ -9,6 +9,9 @@
     <File Path="Infra/Modules/ContainerEnvironment.bicep" />
     <File Path="Infra/Modules/ContainerRegistry.bicep" />
     <File Path="Infra/Modules/LogAnalytics.bicep" />
+    <File Path="Infra/Modules/roleAssignments.bicep" />
+    <File Path="Infra/Modules/ServiceBus.bicep" />
+    <File Path="Infra/Modules/storageAccount.bicep" />
   </Folder>
   <Folder Name="/Infra/Params/">
     <File Path="Infra/Params/parms.bicepparam" />

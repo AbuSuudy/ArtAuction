@@ -4,3 +4,6 @@ az ad sp create-for-rbac --name my-app-credentials --role contributor --scopes /
 
 AZURE_CREDENTIALS = output
 
+```bash
+az containerapp registry set --name my-container-app --resource-group my-container-app-rg --server <ACR_NAME>.azurecr.io --identity system
+```

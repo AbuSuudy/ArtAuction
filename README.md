@@ -1,9 +1,9 @@
 ```bash
-az ad sp create-for-rbac --name my-app-credentials --role contributor --scopes /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/my-container-app-rg --json-auth --output json
+az ad sp create-for-rbac --name deployment-credentials --role contributor --scopes /subscriptions/15cec3e2-1cd9-4276-b215-5370e2425b38/resourceGroups/MassTransit-Playground  --json-auth --output json
 ```
 
 AZURE_CREDENTIALS = output
 
 ```bash
-az containerapp registry set --name my-container-app --resource-group my-container-app-rg --server <ACR_NAME>.azurecr.io --identity system
+az containerapp registry set --name art-auction-api --resource-group MassTransit-Playground --server masstransitcontainerregistry.azurecr.io --identity system
 ```

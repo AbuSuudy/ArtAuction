@@ -47,16 +47,18 @@ module containerEnvironment 'Modules/ContainerEnvironment.bicep' = {
   }
 }
 
-var appNames = [
-  'art-auction-api'
-  'art-auction-consumer'
+var containerApps = [
+  { name: 'art-auction-api', exposedPort: true}
+  { name: 'art-auction-consumer', exposedPort: false}
+  
 ]
 
 module container 'Modules/ContainerApps.bicep' = [
-  for (appName, i) in appNames: {
-    name: 'container-${appName}'
+  for (containerApp, i) in containerApps: {
+    name: 'container-${containerApp.name}'
     params: {
-      containerAppsName: appName
+      containerAppsName: containerApp.name
+      exposedPort: containerApp.exposedPort
       containerRegsistryResourceId: containerRegistry.outputs.containerRegistryResourceId
       workspaceResourceId: logAnalytics.outputs.resourceId
       environmentResourceId: containerEnvironment.outputs.resourceId

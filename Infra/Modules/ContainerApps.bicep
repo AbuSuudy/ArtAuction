@@ -10,6 +10,9 @@ param workspaceResourceId string
 @description('Container Registry Resource ID')
 param containerRegsistryResourceId string
 
+@description('Exposed port in container')
+param exposedPort bool
+
 module containerApp 'br/public:avm/res/app/container-app:0.22.1' = {
   name: '${containerAppsName}-${uniqueString(deployment().name)}'
   params: {
@@ -25,7 +28,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.22.1' = {
     containers: [
       {
         image: 'mcr.microsoft.com/k8se/quickstart:latest'
-        name: 'simple-hello-world-container'
+        name: containerAppsName
         resources: {
           cpu: 1
           memory: '2.0Gi'
@@ -34,6 +37,13 @@ module containerApp 'br/public:avm/res/app/container-app:0.22.1' = {
     ]
     activeRevisionsMode: 'Multiple'
     environmentResourceId: environmentResourceId
+    additionalPortMappings:  exposedPort  ? [
+      {
+        exposedPort: 8080
+        external: false
+        targetPort: 8080
+      }
+    ] : []
   }
 }
 

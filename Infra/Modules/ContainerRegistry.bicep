@@ -10,3 +10,4 @@ module avmContainerRegistry 'br/public:avm/res/container-registry/registry:0.12.
 }
 
 output containerRegistryResourceId string = avmContainerRegistry.outputs.resourceId
+output containerRegsistryurl string = avmContainerRegistry.outputs.loginServer

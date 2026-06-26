@@ -12,6 +12,7 @@ module managedEnvironment 'br/public:avm/res/app/managed-environment:0.13.3' = {
   params: {
     name: environmentName
     zoneRedundant: false
+    publicNetworkAccess: 'Enabled'
     appInsightsConnectionString: appInsightsConnectionString
     appLogsConfiguration: {
       destination: 'log-analytics'

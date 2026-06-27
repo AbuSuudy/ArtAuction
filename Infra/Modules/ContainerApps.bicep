@@ -10,9 +10,6 @@ param workspaceResourceId string
 @description('Container Registry Resource ID')
 param containerRegsistryResourceId string
 
-@description('Container Registry Url')
-param containerRegsistryurl string
-
 module containerApp 'br/public:avm/res/app/container-app:0.22.1' = {
   name: '${containerAppsName}-${uniqueString(deployment().name)}'
   params: {

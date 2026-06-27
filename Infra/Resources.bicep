@@ -57,7 +57,6 @@ module container 'Modules/ContainerApps.bicep' = [
     name: 'container-${containerApp.name}'
     params: {
       containerAppsName: containerApp.name
-      containerRegsistryurl: containerRegistry.outputs.containerRegsistryurl
       containerRegsistryResourceId: containerRegistry.outputs.containerRegistryResourceId
       workspaceResourceId: logAnalytics.outputs.resourceId
       environmentResourceId: containerEnvironment.outputs.resourceId

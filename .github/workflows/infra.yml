@@ -32,7 +32,7 @@ jobs:
           parameters-file: Infra/Params/main.bicepparam
           action-on-unmanage-resources: delete
           action-on-unmanage-resourcegroups: delete
-          deny-settings-mode: denyWriteAndDelete
+          deny-settings-mode: none
 
 
         

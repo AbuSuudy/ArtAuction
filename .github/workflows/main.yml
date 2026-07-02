@@ -1,4 +1,4 @@
-name: Azure Container Apps Deploy
+name: Application Pipeline
 
 on:
   push:

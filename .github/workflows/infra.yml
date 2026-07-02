@@ -16,7 +16,7 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-            
+
       - name: Deployment
         uses: azure/bicep-deploy@v2
         with:
@@ -26,8 +26,8 @@ jobs:
           location: uksouth
           scope: subscription
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          template-file: /Infra/main.bicep
-          parameters-file: /Infra/Params/parms.bicepparam
+          template-file: Infra/main.bicep
+          parameters-file: Infra/Params/parms.bicepparam
           action-on-unmanage-resources: delete
           action-on-unmanage-resourcegroups: delete
           deny-settings-mode: denyWriteAndDelete

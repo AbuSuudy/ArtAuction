@@ -11,3 +11,9 @@ Allow the container app to pull from the container registry
 ```bash
 az containerapp registry set --name art-auction-api --resource-group MassTransit-Playground --server masstransitcontainerregistry.azurecr.io --identity system
 ```
+
+## Delete Resources From Deployment Stack 
+
+```
+Remove-AzSubscriptionDeploymentStack -Name "Development" -ActionOnUnmanage DeleteAll -Force 
+```

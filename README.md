@@ -2,9 +2,10 @@ Create identity used for deployment and sett the output JSON AZURE_CREDENTIALS i
 ```bash
 az ad sp create-for-rbac --name deployment-credentials  --json-auth --output json
 ```
-Assign that idenitiy to the contributor role of the resources group it deploys to 
+Assign that idenitiy to the owner in subscription level since it will be used to create: Resouce Group, Resources in the infra pipeline. Also may need Azure Deployment Stack Contributor
+
 ```
-az role assignment create --assignee-object-id 04f2c0c7-8d8c-4b53-a66d-b94ba77a881f --assignee-principal-type ServicePrincipal --role Contributor --scope /subscriptions/15cec3e2-1cd9-4276-b215-5370e2425b38/resourceGroups/MassTransit-Playground
+az role assignment create --assignee-object-id 04f2c0c7-8d8c-4b53-a66d-b94ba77a881f --assignee-principal-type ServicePrincipal --role Contributor --scope /subscriptions/15cec3e2-1cd9-4276-b215-5370e2425b38/
 ```
 Allow the container app to pull from the container registry
 ```bash

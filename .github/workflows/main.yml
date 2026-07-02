@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'ArtAuction.API/**'
+      - 'ArtAuction.Consumer/**'
+      - 'ArtAuction.Contract/**'
 
 jobs:
   build:

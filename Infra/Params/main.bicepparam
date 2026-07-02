@@ -1,4 +1,4 @@
-using '../Main.bicep'
+using '../main.bicep'
 
 param logAnalyticsName = 'log-analytics-001'
 param appInsightsName = 'app-insight-001'

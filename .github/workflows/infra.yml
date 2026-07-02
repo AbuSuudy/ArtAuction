@@ -1,36 +1,36 @@
-on: [push]
-name: Bicep Infra
-permissions:
-  id-token: write
-  contents: read
+name: Infa
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
+
     steps:
+      - uses: actions/checkout@v3
 
-      # Checkout code
-    - uses: actions/checkout@main
-
-      # Log into Azure
-    - name: Log in to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Deployment
-      uses: azure/bicep-deploy@v2
-      with:
-        type: deploymentStack
-        operation: create
-        name: Development
-        location: uksouth
-        scope: subscription
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        template-file: Infra/main.bicep
-        parameters-file: Infra/Params/parms.bicepparam
-        action-on-unmanage-resources: delete
-        action-on-unmanage-resourcegroups: delete
-        deny-settings-mode: denyWriteAndDelete
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+            
+      - name: Deployment
+        uses: azure/bicep-deploy@v2
+        with:
+          type: deploymentStack
+          operation: create
+          name: Development
+          location: uksouth
+          scope: subscription
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          template-file: Infra/main.bicep
+          parameters-file: Infra/Params/parms.bicepparam
+          action-on-unmanage-resources: delete
+          action-on-unmanage-resourcegroups: delete
+          deny-settings-mode: denyWriteAndDelete
 
 
         

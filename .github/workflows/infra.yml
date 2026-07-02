@@ -26,8 +26,8 @@ jobs:
           location: uksouth
           scope: subscription
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          template-file: Infra\main.bicep
-          parameters-file: Infra\Params\main.bicepparam
+          template-file: Infra/main.bicep
+          parameters-file: Infra/Params/main.bicepparam
           action-on-unmanage-resources: delete
           action-on-unmanage-resourcegroups: delete
           deny-settings-mode: denyWriteAndDelete

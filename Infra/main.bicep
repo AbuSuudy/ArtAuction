@@ -28,7 +28,7 @@ resource newRG 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   location: 'NorthEurope'
 }
 
-module dfd 'Resources.bicep' = {
+/*module dfd 'Resources.bicep' = {
   name: 'Resources'
   scope: newRG
   params: {
@@ -39,4 +39,4 @@ module dfd 'Resources.bicep' = {
     serviceBusName: serviceBusName
     storageAccountName: storageAccountName
   }
-}
+}*/

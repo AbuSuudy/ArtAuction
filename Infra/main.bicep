@@ -23,14 +23,14 @@ param serviceBusName string
 @description('Storage Account')
 param storageAccountName string
 
-resource newRG 'Microsoft.Resources/resourceGroups@2025-04-01' = {
+resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: resourceGroupName
   location: 'NorthEurope'
 }
 
-module dfd 'Resources.bicep' = {
+module resources 'Resources.bicep' = {
   name: 'Resources'
-  scope: newRG
+  scope: resourceGroup
   params: {
     acrName: acrName
     appInsightsName: appInsightsName

@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/GitHub Actions/">
-    <File Path=".github/workflows/main.yml" />
+    <File Path=".github/workflows/application.yml" />
+    <File Path=".github/workflows/infra.yml" />
   </Folder>
   <Folder Name="/Infra/">
     <File Path="Infra/Resources.bicep" />

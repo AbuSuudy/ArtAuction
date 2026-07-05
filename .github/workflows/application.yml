@@ -22,13 +22,24 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and deploy Container App
+      - name: Build and deploy API Container
         uses: azure/container-apps-deploy-action@v1
         with:
           appSourcePath: ${{ github.workspace }}
           dockerfilePath: ArtAuction.API/Dockerfile
           acrName: masstransitcontainerregistry
           containerAppName: art-auction-api
+          resourceGroup: MassTransit-Playground
+          imageToBuild: masstransitcontainerregistry.azurecr.io/art-auction-api:${{ github.sha }}
+          dockerBuildArgs: --platform linux/amd64
+
+      - name: Build and deploy Consumer Worker Serice Container
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}
+          dockerfilePath: ArtAuction.Consumer/Dockerfile
+          acrName: masstransitcontainerregistry
+          containerAppName: art-auction-consumer
           resourceGroup: MassTransit-Playground
           imageToBuild: masstransitcontainerregistry.azurecr.io/art-auction-api:${{ github.sha }}
           dockerBuildArgs: --platform linux/amd64

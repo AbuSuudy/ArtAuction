@@ -57,7 +57,7 @@ app.UseExceptionHandler(errorApp =>
         await context.Response.WriteAsJsonAsync(new ProblemDetails
         {
             Title = "An unexpected error occurred.",
-            Detail = dev ? exception?.Message : string.Empty,
+            Detail = exception.Message,
             Status = 500
         });
     });

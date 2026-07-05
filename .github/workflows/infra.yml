@@ -44,4 +44,11 @@ jobs:
             --server masstransitcontainerregistry.azurecr.io \
             --identity system
 
+      - name: Configure Container App Registry
+        run: |
+          az containerapp registry set \
+            --name art-auction-consumer \
+            --resource-group MassTransit-Playground \
+            --server masstransitcontainerregistry.azurecr.io \
+            --identity system
         

@@ -48,8 +48,8 @@ module containerEnvironment 'Modules/ContainerEnvironment.bicep' = {
 }
 
 var containerApps = [
-  { name: 'art-auction-api', exposedPort: true }
-  { name: 'art-auction-consumer', exposedPort: false }
+  { name: 'art-auction-api' }
+  { name: 'art-auction-consumer' }
 ]
 
 module container 'Modules/ContainerApps.bicep' = [
@@ -64,10 +64,12 @@ module container 'Modules/ContainerApps.bicep' = [
   }
 ]
 
+var identites array = map(container, c => c.identity)
 module serviceBus 'Modules/ServiceBus.bicep' = {
   name: serviceBusName
   params: {
     serviceBusName: serviceBusName
+    identites: identites
   }
 }
 

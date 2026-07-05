@@ -47,3 +47,5 @@ module iams 'roleAssignments.bicep' = {
     scopeResourceId: containerRegsistryResourceId
   }
 }
+
+output systemAssignedMIPrincipalId string = containerApp.outputs.systemAssignedMIPrincipalId

@@ -1,4 +1,4 @@
-//az deployment sub create --name ExampleDeployment --location uksouth --template-file Infra\main.bicep --parameters Infra\Params\parms.bicepparam
+//az deployment sub create --name ExampleDeployment --location uksouth --template-file Infra\main.bicep --parameters Infra\Params\main.bicepparam
 
 targetScope = 'subscription'
 

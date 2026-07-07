@@ -64,7 +64,7 @@ module container 'Modules/ContainerApps.bicep' = [
   }
 ]
 
-var identites array = map(container, c => c.outputs.systemAssignedMIPrincipalId)
+var identites = map(container, c => c.outputs.systemAssignedMIPrincipalId)
 module serviceBus 'Modules/ServiceBus.bicep' = {
   name: serviceBusName
   params: {

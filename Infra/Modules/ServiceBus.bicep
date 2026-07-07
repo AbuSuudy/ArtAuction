@@ -16,7 +16,7 @@ module servicebus 'br/public:avm/res/service-bus/namespace:0.16.2' = {
 //Azure Service Bus Data Owner
 module iams 'roleAssignments.bicep' = [
   for (identity, i) in identites: {
-    name: '${serviceBusName}-Role-${uniqueString(deployment().name)}'
+    name: '${serviceBusName}-Role-${uniqueString(identity)}'
     params: {
       principalId: identity
       roleDefinitionId: '090c5cfd-751d-490a-894a-3ce6f1109419'

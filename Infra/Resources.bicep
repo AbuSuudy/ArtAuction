@@ -73,9 +73,12 @@ module serviceBus 'Modules/ServiceBus.bicep' = {
   }
 }
 
+var apiAppIndex = indexOf(map(containerApps, a => a.name), 'art-auction-api')
+
 module storageAccount 'Modules/storageAccount.bicep' = {
   name: storageAccountName
   params: {
     storageAccountName: storageAccountName
+    containerIdentity: container[apiAppIndex].outputs.systemAssignedMIPrincipalId
   }
 }

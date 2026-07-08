@@ -6,11 +6,17 @@ on:
     branches:
       - main
     paths:
-      - 'Infra/**'
+      - "Infra/**"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        containerapp:
+          - art-auction-api
+          - art-auction-consumer
 
     steps:
       - uses: actions/checkout@v3
@@ -35,20 +41,10 @@ jobs:
           action-on-unmanage-resourcegroups: delete
           deny-settings-mode: none
 
-
       - name: Configure Container App Registry
         run: |
           az containerapp registry set \
-            --name art-auction-api \
+            --name ${{ matrix.containerapp }} \
             --resource-group MassTransit-Playground \
             --server masstransitcontainerregistry.azurecr.io \
             --identity system
-
-      - name: Configure Container App Registry
-        run: |
-          az containerapp registry set \
-            --name art-auction-consumer \
-            --resource-group MassTransit-Playground \
-            --server masstransitcontainerregistry.azurecr.io \
-            --identity system
-        

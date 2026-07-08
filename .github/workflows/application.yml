@@ -6,13 +6,24 @@ on:
     branches:
       - main
     paths:
-      - 'ArtAuction.API/**'
-      - 'ArtAuction.Consumer/**'
-      - 'ArtAuction.Contract/**'
+      - "ArtAuction.API/**"
+      - "ArtAuction.Consumer/**"
+      - "ArtAuction.Contract/**"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        app:
+          - dockerfile: ArtAuction.API/Dockerfile
+            containerAppName: art-auction-api
+            imageName: art-auction-api
+
+          - dockerfile: ArtAuction.Consumer/Dockerfile
+            containerAppName: art-auction-consumer
+            imageName: art-auction-consumer
 
     steps:
       - uses: actions/checkout@v3
@@ -22,24 +33,13 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and deploy API Container
+      - name: Build and deploy ${{ matrix.app.containerAppName }}
         uses: azure/container-apps-deploy-action@v1
         with:
           appSourcePath: ${{ github.workspace }}
-          dockerfilePath: ArtAuction.API/Dockerfile
+          dockerfilePath: ${{ matrix.app.dockerfile }}
           acrName: masstransitcontainerregistry
-          containerAppName: art-auction-api
+          containerAppName: ${{ matrix.app.containerAppName }}
           resourceGroup: MassTransit-Playground
-          imageToBuild: masstransitcontainerregistry.azurecr.io/art-auction-api:${{ github.sha }}
-          dockerBuildArgs: --platform linux/amd64
-
-      - name: Build and deploy Consumer Worker Serice Container
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          appSourcePath: ${{ github.workspace }}
-          dockerfilePath: ArtAuction.Consumer/Dockerfile
-          acrName: masstransitcontainerregistry
-          containerAppName: art-auction-consumer
-          resourceGroup: MassTransit-Playground
-          imageToBuild: masstransitcontainerregistry.azurecr.io/art-auction-api:${{ github.sha }}
+          imageToBuild: masstransitcontainerregistry.azurecr.io/${{ matrix.app.imageName }}:${{ github.sha }}
           dockerBuildArgs: --platform linux/amd64

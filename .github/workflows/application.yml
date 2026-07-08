@@ -33,7 +33,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and deploy ${{ matrix.app.containerAppName }}
+      - name: Build and Deploy Container ${{ matrix.app.containerAppName }}
         uses: azure/container-apps-deploy-action@v1
         with:
           appSourcePath: ${{ github.workspace }}

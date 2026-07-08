@@ -9,14 +9,8 @@ on:
       - "Infra/**"
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        containerapp:
-          - art-auction-api
-          - art-auction-consumer
 
     steps:
       - uses: actions/checkout@v3
@@ -40,6 +34,22 @@ jobs:
           action-on-unmanage-resources: delete
           action-on-unmanage-resourcegroups: delete
           deny-settings-mode: none
+
+  configure-registry:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        containerapp:
+          - art-auction-api
+          - art-auction-consumer
+
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Configure Container App Registry
         run: |

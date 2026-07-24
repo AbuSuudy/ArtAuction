@@ -39,7 +39,7 @@ jobs:
           login-server: masstransitcontainerregistry.azurecr.io
 
       - name: Build and push image to ACR
-        uses: docker/build-push-action@v4
+        uses: azure/container-apps-deploy-action@v1
         with:
           context: ${{ github.workspace }}
           file: ${{ matrix.app.dockerfile }}

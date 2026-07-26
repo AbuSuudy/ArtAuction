@@ -198,8 +198,7 @@ jobs:
                 --name "$APP_NAME" \
                 --resource-group "$RESOURCE_GROUP" \
                 --label "$CURRENT_LABEL" \
-                --revision "$CURRENT_REVISION" \
-                --yes
+                --revision "$CURRENT_REVISION" 
             fi
           else
             # Bootstrap case: just set the target label to 100%

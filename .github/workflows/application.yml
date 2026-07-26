@@ -185,8 +185,7 @@ jobs:
             az containerapp ingress traffic set \
               --name "$APP_NAME" \
               --resource-group "$RESOURCE_GROUP" \
-              --label-weight "$TARGET_LABEL=100" \
-              --label-weight "$CURRENT_LABEL=0"
+              --label-weight "$TARGET_LABEL=100" 
 
             # Remove the label from the previous revision to ensure clean state
             CURRENT_REVISION=$(az containerapp ingress traffic show \

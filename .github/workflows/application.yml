@@ -181,18 +181,19 @@ jobs:
           CURRENT_LABEL="${{ steps.slot.outputs.current_label }}"
 
           if [ -n "$CURRENT_LABEL" ]; then
-            # Set traffic to the target label first, then remove from current
+            # Set traffic to the target label to 100%, current label to 0%
             az containerapp ingress traffic set \
               --name "$APP_NAME" \
               --resource-group "$RESOURCE_GROUP" \
-              --label-weight "$TARGET_LABEL=100" "$CURRENT_LABEL=0"
-      
+              --label-weight "$TARGET_LABEL=100" \
+              --label-weight "$CURRENT_LABEL=0"
+
             # Remove the label from the previous revision to ensure clean state
             CURRENT_REVISION=$(az containerapp ingress traffic show \
               --name "$APP_NAME" \
               --resource-group "$RESOURCE_GROUP" -o json | \
               jq -r --arg L "$CURRENT_LABEL" '[.[] | select(.label == $L)][0].revisionName // empty')
-      
+
             if [ -n "$CURRENT_REVISION" ]; then
               az containerapp revision label remove \
                 --name "$APP_NAME" \

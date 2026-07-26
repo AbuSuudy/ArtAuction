@@ -33,56 +33,48 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login to ACR
-        uses: azure/docker-login@v1
-        with:
-          login-server: masstransitcontainerregistry.azurecr.io
-
-      - name: Build and push image to ACR
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          context: ${{ github.workspace }}
-          file: ${{ matrix.app.dockerfile }}
-          push: true
-          tags: masstransitcontainerregistry.azurecr.io/${{ matrix.app.imageName }}:${{ github.sha }}
-          platforms: linux/amd64
-
-      - name: Blue-Green deploy to Azure Container Apps
-        shell: bash
+      # Assumes image is already built and pushed to ACR elsewhere in your pipeline.
+      - name: Blue/Green deploy via az CLI
         env:
           RESOURCE_GROUP: MassTransit-Playground
-          APP_NAME: ${{ matrix.app.containerAppName }}
-          IMAGE: masstransitcontainerregistry.azurecr.io/${{ matrix.app.imageName }}:${{ github.sha }}
-          SHORT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
 
-          # create a safe suffix using short sha
-          SHORT=${SHORT_SHA:0:7}
-          NEW_SUFFIX="green-${SHORT}"
-          NEW_REVISION_NAME="${APP_NAME}--${NEW_SUFFIX}"
+          APP=${{ matrix.app.containerAppName }}
+          IMAGE=masstransitcontainerregistry.azurecr.io/${{ matrix.app.imageName }}:${{ github.sha }}
+          RG="${RESOURCE_GROUP}"
+          SHORT_SHA="${GITHUB_SHA:0:8}"
+          NEW_REV="${APP}--${SHORT_SHA}"
 
-          # enable multiple revisions and limit inactive revisions to 1 (keeps only current + 1 inactive)
-          az containerapp revision set-mode --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --mode multiple
+          # Ensure Container Apps extension and multiple revision mode
+          az extension add --name containerapp --upgrade --allow-preview true || true
+          az containerapp revision set-mode --name "$APP" --resource-group "$RG" --mode multiple || true
 
-          # update the container app with the new image and revision suffix and enforce max inactive revisions = 1
+          # Deploy new revision (uses image already in ACR)
           az containerapp update \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$APP_NAME" \
+            --name "$APP" \
+            --resource-group "$RG" \
             --image "$IMAGE" \
-            --revision-suffix "$NEW_SUFFIX" \
-            --revisions-mode multiple \
-            --max-inactive-revisions 1
+            --revision-suffix "$SHORT_SHA"
 
-          # label the new revision as 'green'
-          az containerapp revision label add --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --label green --revision "$NEW_REVISION_NAME" || true
+          # Label new revision as 'green'
+          az containerapp revision label add \
+            --name "$APP" \
+            --resource-group "$RG" \
+            --revision "$NEW_REV" \
+            --label green || true
 
-          # find the previous revision (the most recent revision that is not the new one) and label it 'blue'
-          PREV_REV=$(az containerapp revision list -g "$RESOURCE_GROUP" -n "$APP_NAME" --query "[?name!='$NEW_REVISION_NAME'] | sort_by(@,&createdTime) | [-1].name" -o tsv || true)
-          if [ -n "$PREV_REV" ]; then
-            az containerapp revision label add --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --label blue --revision "$PREV_REV" || true
+          # If an existing 'blue' label exists, switch traffic by label; otherwise set by revision name
+          BLUE_REV=$(az containerapp label-history show --name "$APP" --resource-group "$RG" --label blue --query "[0].revision" -o tsv || echo "")
+
+          if [ -n "$BLUE_REV" ]; then
+            az containerapp ingress traffic set \
+              --name "$APP" \
+              --resource-group "$RG" \
+              --label-weight blue=0 green=100
+          else
+            az containerapp ingress traffic set \
+              --name "$APP" \
+              --resource-group "$RG" \
+              --revision-weight "${NEW_REV}=100"
           fi
-
-          # Keep traffic on blue by default (safe: green receives 0%). To switch traffic to green, run:
-          # az containerapp ingress traffic set --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --label-weight blue=0 green=100
-          az containerapp ingress traffic set --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --label-weight blue=100 green=0 || true

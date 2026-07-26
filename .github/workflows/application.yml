@@ -6,9 +6,8 @@ name: Application Pipeline
 # at any time. Every run:
 #   1. builds the image and deploys it as a brand new revision at 0% traffic
 #   2. labels that revision with whichever of blue/green is currently idle
-#   3. smoke-tests it via its label-specific URL
-#   4. only then swaps 100% of traffic onto it
-#   5. deactivates the revision that lost its label two cycles ago
+#   3. only then swaps 100% of traffic onto it
+#   4. deactivates the revision that lost its label two cycles ago
 #
 # Prerequisites this workflow assumes:
 #   - art-auction-api and art-auction-consumer already exist as Container

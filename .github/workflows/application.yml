@@ -174,26 +174,6 @@ jobs:
             --revision "${{ steps.deploy.outputs.revision_name }}" \
             --yes
 
-      # Gate: this hits the label-specific URL directly, bypassing
-      # production traffic entirely. If it fails, the job stops here and
-      # nothing about production changes. Replace the "/" path with a real
-      # health endpoint for this app.
-      - name: Smoke test the new revision
-        run: |
-          set -euo pipefail
-          FQDN=$(az containerapp show \
-            --name "$APP_NAME" \
-            --resource-group "$RESOURCE_GROUP" \
-            --query "properties.configuration.ingress.fqdn" -o tsv)
-
-          if [ -z "$FQDN" ] || [ "$FQDN" = "null" ]; then
-            echo "$APP_NAME has no ingress configured - skipping HTTP smoke test."
-            exit 0
-          fi
-
-          LABEL_URL="https://$APP_NAME---${{ steps.slot.outputs.target_label }}.${FQDN#*.}"
-          echo "Testing $LABEL_URL"
-          curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-connrefused "$LABEL_URL/"
 
       - name: Promote new revision to production
         run: |

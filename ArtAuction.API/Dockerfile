@@ -28,5 +28,11 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
+# Provide a default runtime UID to avoid an empty USER value at runtime
+ARG APP_UID=1000
+# Ensure ASP.NET listens on the container port expected by the Container App
+ENV ASPNETCORE_URLS="http://+:8080"
+
 USER $APP_UID
+
 ENTRYPOINT ["dotnet", "ArtAuction.API.dll"]

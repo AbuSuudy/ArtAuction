@@ -205,7 +205,7 @@ jobs:
             az containerapp ingress traffic set \
               --name "$APP_NAME" \
               --resource-group "$RESOURCE_GROUP" \
-              --label-weight "$TARGET_LABEL=100"
+              --revision-weight latest=100
           fi
 
       # Tidies up the revision that lost its label two cycles ago so idle

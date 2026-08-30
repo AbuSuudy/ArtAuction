@@ -36,6 +36,7 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
+builder.Services.AddApplicationInsightsTelemetry();
 
 var host = builder.Build();
 host.Run();

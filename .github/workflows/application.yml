@@ -159,7 +159,7 @@ jobs:
         run: |
           APP_DOMAIN=$(az containerapp env show \
             -g ${{ vars.RESOURCE_GROUP }} \
-            -n ${{ matrix.app.containerAppName }} \
+            -n container-environment-001 \
             --query properties.defaultDomain -o tsv)
 
           echo "### Green Deployment Ready 🟢" >> $GITHUB_STEP_SUMMARY

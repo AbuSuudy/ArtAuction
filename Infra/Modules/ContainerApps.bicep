@@ -36,12 +36,12 @@ module containerApp 'br/public:avm/res/app/container-app:0.22.1' = {
     traffic: [
       {
         label: 'blue'
-        revisionName: '${containerAppsName}-blue'
+        revisionName: '${containerAppsName}--blue'
         weight: 100
       }
       {
         label: 'green'
-        revisionName: '${containerAppsName}-green'
+        revisionName: '${containerAppsName}--green'
         weight: 0
       }
     ]

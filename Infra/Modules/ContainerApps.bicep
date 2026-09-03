@@ -33,6 +33,20 @@ module containerApp 'br/public:avm/res/app/container-app:0.22.1' = {
       }
     ]
     ingressTargetPort: 8080
+    ingress: {
+      traffic: [
+        {
+          revisionName: '${containerAppsName}--blue'
+          label: 'blue'
+          weight: 100
+        }
+        {
+          revisionName: '${containerAppsName}--green'
+          label: 'green'
+          weight: 0
+        }
+      ]
+    }
     activeRevisionsMode: 'Multiple'
     environmentResourceId: environmentResourceId
   }

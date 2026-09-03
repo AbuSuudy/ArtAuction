@@ -2,15 +2,6 @@ name: Application Pipeline
 
 on:
   workflow_dispatch:
-    inputs:
-      action:
-        type: choice
-        description: 'Deployment action'
-        options:
-          - deploy-to-green
-          - switch-to-green
-          - rollback-to-blue
-        default: deploy-to-green
   push:
     branches:
       - main
@@ -19,20 +10,9 @@ on:
       - "ArtAuction.Consumer/**"
       - "ArtAuction.Contract/**"
 
-permissions:
-  contents: read
-
-env:
-  COMMIT_HASH: ${{ github.sha }}
-
 jobs:
-  build-and-deploy-green:
+  build:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event.inputs.action == 'deploy-to-green'
-
-    concurrency:
-      group: blue-green-${{ matrix.app.containerAppName }}
-      cancel-in-progress: false
 
     strategy:
       matrix:
@@ -46,226 +26,31 @@ jobs:
             imageName: art-auction-consumer
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set short commit hash
-        run: |
-          echo "SHORT_COMMIT_HASH=${COMMIT_HASH:0:8}" >> $GITHUB_ENV
+      - uses: actions/checkout@v3
 
       - name: Log in to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Log in to container registry
-        run: |
-          REGISTRY_NAME="${{ vars.REGISTRY_LOGIN_SERVER }}"
-          az acr login --name "${REGISTRY_NAME%%.*}"
-
       - name: Build and push image
-        run: |
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ vars.REGISTRY_LOGIN_SERVER }}
+          username: ${{ vars.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - run: |
           docker build \
             -f ${{ matrix.app.dockerfile }} \
-            -t ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ env.SHORT_COMMIT_HASH }} \
-            -t ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:latest \
+            -t ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }} \
             .
 
-          docker push ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ env.SHORT_COMMIT_HASH }}
-          docker push ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:latest
+          docker push \
+            ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
 
-      - name: Ensure multiple revisions mode enabled
-        run: |
-          az containerapp revision set-mode \
-            --name ${{ matrix.app.containerAppName }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --mode multiple
-
-      - name: Sync blue/green labels before deploying
-        run: |
-          GREEN_EXISTS=$(az containerapp ingress traffic show \
-            --name ${{ matrix.app.containerAppName }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --query "length([?label=='green'])" -o tsv)
-
-          if [ "$GREEN_EXISTS" = "0" ]; then
-            # First run for this app: nothing is labeled yet. Pin 100% of
-            # traffic to whatever is currently running and call it "blue",
-            # so this deploy (and every future one) is safe to test before
-            # it goes live, instead of riding in on default "latest
-            # revision" traffic routing.
-            echo "No labels found yet - bootstrapping the blue label."
-            CURRENT_REVISION=$(az containerapp show \
-              --name ${{ matrix.app.containerAppName }} \
-              --resource-group ${{ vars.RESOURCE_GROUP }} \
-              --query "properties.latestRevisionName" -o tsv)
-
-            az containerapp ingress traffic set \
-              --name ${{ matrix.app.containerAppName }} \
-              --resource-group ${{ vars.RESOURCE_GROUP }} \
-              --revision-weight "$CURRENT_REVISION=100"
-
-            az containerapp revision label add \
-              --name ${{ matrix.app.containerAppName }} \
-              --resource-group ${{ vars.RESOURCE_GROUP }} \
-              --label blue \
-              --revision "$CURRENT_REVISION"
-          else
-            GREEN_WEIGHT=$(az containerapp ingress traffic show \
-              --name ${{ matrix.app.containerAppName }} \
-              --resource-group ${{ vars.RESOURCE_GROUP }} \
-              --query "[?label=='green'].weight | [0]" -o tsv)
-
-            if [ "$GREEN_WEIGHT" = "100" ]; then
-              # A previous switch-to-green is live and has been running
-              # fine since - promote it to "blue" and free up "green" for
-              # today's deployment. This intentionally happens here, at
-              # the start of the *next* cycle, rather than right after
-              # switching - rollback-to-blue never touches labels, so
-              # keeping the pre-switch revision labeled "blue" until now
-              # is what keeps an instant rollback available.
-              echo "Green is live - promoting it to blue for the new cycle."
-              az containerapp revision label swap \
-                --name ${{ matrix.app.containerAppName }} \
-                --resource-group ${{ vars.RESOURCE_GROUP }} \
-                --source blue \
-                --target green
-
-              az containerapp ingress traffic set \
-                --name ${{ matrix.app.containerAppName }} \
-                --resource-group ${{ vars.RESOURCE_GROUP }} \
-                --label-weight blue=100 green=0
-            fi
-          fi
-
-      - name: Deploy to green revision
+      - name: Deploy to Container App
         run: |
           az containerapp update \
             --name ${{ matrix.app.containerAppName }} \
             --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --image ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ env.SHORT_COMMIT_HASH }} \
-            --revision-suffix ${{ env.SHORT_COMMIT_HASH }}
-
-      - name: Add green label to new revision
-        run: |
-          REVISION_NAME="${{ matrix.app.containerAppName }}--${{ env.SHORT_COMMIT_HASH }}"
-
-          az containerapp revision label add \
-            --name ${{ matrix.app.containerAppName }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --label green \
-            --revision "$REVISION_NAME"
-
-      - name: Output green deployment info
-        run: |
-          APP_DOMAIN=$(az containerapp env show \
-            -g ${{ vars.RESOURCE_GROUP }} \
-            -n container-environment-001 \
-            --query properties.defaultDomain -o tsv)
-
-          echo "### Green Deployment Ready 🟢" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Application:** ${{ matrix.app.containerAppName }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Image Tag:** ${{ env.SHORT_COMMIT_HASH }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Test URL:** https://${{ matrix.app.containerAppName }}---green.$APP_DOMAIN" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Next step: Use 'switch-to-green' action to switch production traffic after testing." >> $GITHUB_STEP_SUMMARY
-
-  switch-traffic-to-green:
-    runs-on: ubuntu-latest
-    if: github.event.inputs.action == 'switch-to-green'
-
-    concurrency:
-      group: blue-green-${{ matrix.app.containerAppName }}
-      cancel-in-progress: false
-
-    strategy:
-      matrix:
-        app:
-          - containerAppName: art-auction-api
-
-          - containerAppName: art-auction-consumer
-
-    steps:
-      - name: Log in to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Verify green revision exists
-        run: |
-          GREEN_REVISION=$(az containerapp ingress traffic show \
-            --name ${{ matrix.app.containerAppName }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --query "[?label=='green'].revisionName | [0]" -o tsv)
-
-          if [ -z "$GREEN_REVISION" ]; then
-            echo "❌ No green revision found. Please deploy to green first."
-            exit 1
-          fi
-          echo "GREEN_REVISION=$GREEN_REVISION" >> $GITHUB_ENV
-
-      - name: Switch traffic to green revision
-        run: |
-          az containerapp ingress traffic set \
-            --name ${{ matrix.app.containerAppName }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --label-weight blue=0 green=100
-
-      - name: Output switch confirmation
-        run: |
-          echo "### Traffic Switched to Green 🟢✅" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Application:** ${{ matrix.app.containerAppName }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** Production traffic now routed to the green revision ($GREEN_REVISION)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Labels are left as-is so 'rollback-to-blue' can still revert instantly. They get synced up automatically the next time 'deploy-to-green' runs." >> $GITHUB_STEP_SUMMARY
-
-  rollback-to-blue:
-    runs-on: ubuntu-latest
-    if: github.event.inputs.action == 'rollback-to-blue'
-
-    concurrency:
-      group: blue-green-${{ matrix.app.containerAppName }}
-      cancel-in-progress: false
-
-    strategy:
-      matrix:
-        app:
-          - containerAppName: art-auction-api
-
-          - containerAppName: art-auction-consumer
-
-    steps:
-      - name: Log in to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Verify blue revision exists
-        run: |
-          BLUE_REVISION=$(az containerapp ingress traffic show \
-            --name ${{ matrix.app.containerAppName }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --query "[?label=='blue'].revisionName | [0]" -o tsv)
-
-          if [ -z "$BLUE_REVISION" ]; then
-            echo "❌ No blue revision found. Cannot rollback."
-            exit 1
-          fi
-          echo "BLUE_REVISION=$BLUE_REVISION" >> $GITHUB_ENV
-
-      - name: Switch traffic back to blue revision
-        run: |
-          az containerapp ingress traffic set \
-            --name ${{ matrix.app.containerAppName }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --label-weight blue=100 green=0
-
-      - name: Output rollback confirmation
-        run: |
-          echo "### Rollback to Blue Complete 🔵✅" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Application:** ${{ matrix.app.containerAppName }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** Production traffic restored to blue revision ($BLUE_REVISION)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The green revision is still active for investigation and redeployment." >> $GITHUB_STEP_SUMMARY
+            --image ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}

@@ -54,3 +54,4 @@ jobs:
             --name ${{ matrix.app.containerAppName }} \
             --resource-group ${{ vars.RESOURCE_GROUP }} \
             --image ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
+

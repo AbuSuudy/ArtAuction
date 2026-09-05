@@ -73,7 +73,7 @@ jobs:
           else
               # First deployment
               DEPLOY_LABEL="blue"
-              PREVIOUS_LABEL="none"
+              PREVIOUS_LABEL="None, first deployment"
           fi
 
           echo "Deploy label: $DEPLOY_LABEL"

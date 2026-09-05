@@ -10,7 +10,7 @@ param workspaceResourceId string
 @description('Container Registry Resource ID')
 param containerRegsistryResourceId string
 
-module containerApp 'br/public:avm/res/app/container-app:0.22.1' = {
+module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
   name: '${containerAppsName}-${uniqueString(deployment().name)}'
   params: {
     name: containerAppsName
@@ -33,18 +33,6 @@ module containerApp 'br/public:avm/res/app/container-app:0.22.1' = {
       }
     ]
     ingressTargetPort: 8080
-    traffic: [
-      {
-        label: 'blue'
-        revisionName: '${containerAppsName}--blue'
-        weight: 100
-      }
-      {
-        label: 'green'
-        revisionName: '${containerAppsName}--green'
-        weight: 0
-      }
-    ]
     activeRevisionsMode: 'Multiple'
     environmentResourceId: environmentResourceId
   }

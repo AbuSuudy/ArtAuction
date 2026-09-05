@@ -51,109 +51,121 @@ jobs:
       - name: Deploy to Container App
         shell: bash
         run: |
+          set -euo pipefail
+
           APP_NAME="${{ matrix.app.containerAppName }}"
           RG="${{ vars.RESOURCE_GROUP }}"
           IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
 
-          # Capture current blue revision before deployment
-          currentBlue=$(az containerapp ingress traffic show \
+          blueWeight=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --query "[?label=='blue'].revisionName | [0]" \
+            --query "[?label=='blue'].weight | [0]" \
             -o tsv)
 
-          echo "Current blue revision: $currentBlue"
-
-          # Create new revision
-          az containerapp update \
+          greenWeight=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --image "$IMAGE"
-
-          # Get the newly created revision
-          latestRevision=$(az containerapp show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query properties.latestRevisionName \
+            --query "[?label=='green'].weight | [0]" \
             -o tsv)
 
-          echo "Latest revision: $latestRevision"
+          if [ "$blueWeight" = "100" ]; then
+            DEPLOY_LABEL="green"
+            LIVE_LABEL="blue"
+          elif [ "$greenWeight" = "100" ]; then
+            DEPLOY_LABEL="blue"
+            LIVE_LABEL="green"
+          else
+            DEPLOY_LABEL="blue"
+            LIVE_LABEL="none"
+          fi
 
-          # Wait for the new revision to become available
-          while true; do
-            provisionState=$(az containerapp revision show \
+            echo "Live slot: $LIVE_LABEL"
+            echo "Deploying into slot: $DEPLOY_LABEL"
+
+            # Deploy new image
+            az containerapp update \
               --name "$APP_NAME" \
               --resource-group "$RG" \
-              --revision "$latestRevision" \
-              --query properties.provisioningState \
+              --image "$IMAGE"
+
+            # Get new revision
+            latestRevision=$(az containerapp show \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --query properties.latestRevisionName \
               -o tsv)
+
+            echo "Latest revision: $latestRevision"
+
+          # Wait for revision provisioning
+          while true; do
+            provisionState=$(az containerapp revision show \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --revision "$latestRevision" \
+            --query properties.provisioningState \
+            -o tsv)
 
             echo "Revision state: $provisionState"
 
             if [ "$provisionState" = "Provisioned" ]; then
-              break
+            break
+            fi
+
+            if [ "$provisionState" = "ProvisioningFailed" ]; then
+            echo "Revision provisioning failed."
+            exit 1
             fi
 
             sleep 10
           done
 
-          # Move previous blue revision to green
-          if [ -n "$currentBlue" ]; then
-            az containerapp revision label add \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --label green \
-              --revision "$currentBlue" \
-              --yes
-
-            echo "Assigned green to previous blue revision: $currentBlue"
-          fi
-
-          # Assign blue to the new revision
+          # Assign deployment slot label to new revision
           az containerapp revision label add \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --label blue \
+            --label "$DEPLOY_LABEL" \
             --revision "$latestRevision" \
             --yes
 
-          echo "Assigned blue to new revision: $latestRevision"
+          echo "Assigned $DEPLOY_LABEL to $latestRevision"
 
-          # Get blue revision
+          # Current labelled revisions
           blueRevision=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --query "[?label=='blue'].revisionName | [0]" \
             -o tsv)
 
-          # Get green revision
           greenRevision=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --query "[?label=='green'].revisionName | [0]" \
             -o tsv)
 
-          echo "Blue revision:  $blueRevision"
-          echo "Green revision: $greenRevision"
-          
-          # Get all revisions
-          allRevisions=$(az containerapp revision list \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[].name" \
-            -o tsv)
+            echo "Blue revision: ${blueRevision:-<none>}"
+            echo "Green revision: ${greenRevision:-<none>}"
 
-          # Deactivate anything that is neither blue nor green
-          for revision in $allRevisions
-          do
-            if [ "$revision" != "$blueRevision" ] && [ "$revision" != "$greenRevision" ]; then
-              echo "Deactivating old revision: $revision"
+            # Cleanup old revisions and keep only labelled blue/green revisions
+            allRevisions=$(az containerapp revision list \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --query "[].name" \
+              -o tsv)
 
-              az containerapp revision deactivate \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                --revision "$revision"
-            else
-              echo "Keeping labelled revision: $revision"
-            fi
-          done
+            for revision in $allRevisions
+            do
+              if [ "$revision" != "$blueRevision" ] && [ "$revision" != "$greenRevision" ]; then
+                echo "Deactivating old revision: $revision"
+
+                az containerapp revision deactivate \
+                  --name "$APP_NAME" \
+                  --resource-group "$RG" \
+                  --revision "$revision"
+              else
+                echo "Keeping deployment slot revision: $revision"
+              fi
+            done
+
+            echo "Deployment complete"

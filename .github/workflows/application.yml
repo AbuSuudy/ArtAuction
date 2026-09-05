@@ -55,23 +55,14 @@ jobs:
           RG="${{ vars.RESOURCE_GROUP }}"
           IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
 
-          # Determine which label is currently live
-          liveLabel=$(az containerapp ingress traffic show \
+          # Capture current blue revision before deployment
+          currentBlue=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --query "[?weight==\`100\`].label | [0]" \
+            --query "[?label=='blue'].revisionName | [0]" \
             -o tsv)
 
-          echo "Current live label: $liveLabel"
-
-          # Deploy to the opposite colour
-          if [ "$liveLabel" = "blue" ]; then
-            LABEL="green"
-          else
-            LABEL="blue"
-          fi
-
-          echo "Deploying new revision with label: $LABEL"
+          echo "Current blue revision: $currentBlue"
 
           # Create new revision
           az containerapp update \
@@ -88,12 +79,42 @@ jobs:
 
           echo "Latest revision: $latestRevision"
 
-          # Assign label to the new revision
+          # Wait for the new revision to become available
+          while true; do
+            provisionState=$(az containerapp revision show \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --revision "$latestRevision" \
+              --query properties.provisioningState \
+              -o tsv)
+
+            echo "Revision state: $provisionState"
+
+            if [ "$provisionState" = "Provisioned" ]; then
+              break
+            fi
+
+            sleep 10
+          done
+
+          # Move previous blue revision to green
+          if [ -n "$currentBlue" ]; then
+            az containerapp revision label add \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --label green \
+              --revision "$currentBlue" \
+              --yes
+
+            echo "Assigned green to previous blue revision: $currentBlue"
+          fi
+
+          # Assign blue to the new revision
           az containerapp revision label add \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --label "$LABEL" \
+            --label blue \
             --revision "$latestRevision" \
             --yes
 
-          echo "Revision $latestRevision assigned label $LABEL"
+          echo "Assigned blue to new revision: $latestRevision"

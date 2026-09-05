@@ -118,3 +118,21 @@ jobs:
             --yes
 
           echo "Assigned blue to new revision: $latestRevision"
+
+          unlabelledRevisions=$(az containerapp ingress traffic show \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "[?label==null].revisionName" \
+            -o tsv)
+
+          if [ -z "$unlabelledRevisions" ]; then
+            echo "No unlabelled revisions found."
+          else
+            for revision in $unlabelledRevisions
+            do
+              az containerapp revision deactivate \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --revision "$revision"
+            done
+          fi

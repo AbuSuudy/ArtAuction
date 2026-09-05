@@ -57,33 +57,20 @@ jobs:
           RG="${{ vars.RESOURCE_GROUP }}"
           IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
 
-          # Determine which slot is currently live
-          blueWeight=$(az containerapp ingress traffic show \
+          # Get live label
+          LIVE_LABEL=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --query "[?label=='blue'].weight | [0]" \
+            --query "sort_by(@,&weight)[-1].label" \
             -o tsv)
 
-          greenWeight=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='green'].weight | [0]" \
-            -o tsv)
-
-          if [ "$blueWeight" = "100" ]; then
-            DEPLOY_LABEL="green"
-            LIVE_LABEL="blue"
-          elif [ "$greenWeight" = "100" ]; then
-            DEPLOY_LABEL="blue"
-            LIVE_LABEL="green"
+          if [ "$LIVE_LABEL" = "blue" ]; then
+              DEPLOY_LABEL="green"
+              PREVIOUS_LABEL="blue"
           else
-            # First deployment
-            DEPLOY_LABEL="blue"
-            LIVE_LABEL="none"
+              DEPLOY_LABEL="blue"
+              PREVIOUS_LABEL="green"
           fi
-
-          echo "Live slot: $LIVE_LABEL"
-          echo "Deploying into slot: $DEPLOY_LABEL"
 
           # Deploy new image
           az containerapp update \
@@ -91,37 +78,11 @@ jobs:
             --resource-group "$RG" \
             --image "$IMAGE"
 
-          # Get new revision
           latestRevision=$(az containerapp show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --query properties.latestRevisionName \
             -o tsv)
-
-          echo "Latest revision: $latestRevision"
-
-          # Wait for revision provisioning
-          while true; do
-            provisionState=$(az containerapp revision show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision "$latestRevision" \
-              --query properties.provisioningState \
-              -o tsv)
-
-            echo "Revision state: $provisionState"
-
-            if [ "$provisionState" = "Provisioned" ]; then
-              break
-            fi
-
-            if [ "$provisionState" = "ProvisioningFailed" ]; then
-              echo "Revision provisioning failed."
-              exit 1
-            fi
-
-            sleep 10
-          done
 
           # Assign the deployment label to the new revision
           az containerapp revision label add \
@@ -131,7 +92,8 @@ jobs:
             --revision "$latestRevision" \
             --yes
 
-          echo "Assigned $DEPLOY_LABEL to $latestRevision"
+          echo "Deploy label: $DEPLOY_LABEL"
+          echo "Previous label: $PREVIOUS_LABEL"
 
           # Get current blue and green revisions
           blueRevision=$(az containerapp ingress traffic show \

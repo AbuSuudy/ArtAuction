@@ -135,6 +135,7 @@ jobs:
 
           echo "Blue revision:  $blueRevision"
           echo "Green revision: $greenRevision"
+          
           # Get all revisions
           allRevisions=$(az containerapp revision list \
             --name "$APP_NAME" \

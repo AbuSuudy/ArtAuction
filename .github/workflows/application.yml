@@ -49,9 +49,50 @@ jobs:
             ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
 
       - name: Deploy to Container App
+        shell: bash
         run: |
-          az containerapp update \
-            --name ${{ matrix.app.containerAppName }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --image ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
+          APP_NAME="${{ matrix.app.containerAppName }}"
+          RG="${{ vars.RESOURCE_GROUP }}"
+          IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
 
+          # Determine which label is currently live
+          liveLabel=$(az containerapp ingress traffic show \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "[?weight==\`100\`].label | [0]" \
+            -o tsv)
+
+          echo "Current live label: $liveLabel"
+
+          # Deploy to the opposite colour
+          if [ "$liveLabel" = "blue" ]; then
+            LABEL="green"
+          else
+            LABEL="blue"
+          fi
+
+          echo "Deploying new revision with label: $LABEL"
+
+          # Create new revision
+          az containerapp update \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --image "$IMAGE"
+
+          # Get the newly created revision
+          latestRevision=$(az containerapp show \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query properties.latestRevisionName \
+            -o tsv)
+
+          echo "Latest revision: $latestRevision"
+
+          # Assign label to the new revision
+          az containerapp revision label add \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --label "$LABEL" \
+            --revision "$latestRevision"
+
+          echo "Revision $latestRevision assigned label $LABEL"

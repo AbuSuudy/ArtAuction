@@ -119,19 +119,22 @@ jobs:
 
           echo "Assigned blue to new revision: $latestRevision"
 
-          # Get current labelled revisions
+          # Get blue revision
           blueRevision=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --query "[?label=='blue'].revisionName | [0]" \
             -o tsv)
 
+          # Get green revision
           greenRevision=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --query "[?label=='green'].revisionName | [0]" \
             -o tsv)
 
+          echo "Blue revision:  $blueRevision"
+          echo "Green revision: $greenRevision"
           # Get all revisions
           allRevisions=$(az containerapp revision list \
             --name "$APP_NAME" \
@@ -139,7 +142,7 @@ jobs:
             --query "[].name" \
             -o tsv)
 
-          # Deactivate revisions that are neither blue nor green
+          # Deactivate anything that is neither blue nor green
           for revision in $allRevisions
           do
             if [ "$revision" != "$blueRevision" ] && [ "$revision" != "$greenRevision" ]; then
@@ -149,5 +152,7 @@ jobs:
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --revision "$revision"
+            else
+              echo "Keeping labelled revision: $revision"
             fi
           done

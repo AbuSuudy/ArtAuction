@@ -93,7 +93,7 @@ jobs:
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --label "$LABEL" \
-            --revision "$latestRevision"
+            --revision "$latestRevision" \
             --yes
 
           echo "Revision $latestRevision assigned label $LABEL"

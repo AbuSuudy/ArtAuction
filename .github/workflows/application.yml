@@ -86,36 +86,14 @@ jobs:
             --query properties.latestRevisionName \
             -o tsv)
 
-          echo "Waiting for revision $latestRevision..."
-
-          while true; do
-            active=$(az containerapp revision show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision "$latestRevision" \
-              --query properties.active \
-              -o tsv)
-
-            if [ "$active" = "true" ]; then
-              break
-            fi
-
-            sleep 10
-          done
-
-          az containerapp revision label add \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --label "$LABEL" \
-            --revision "$latestRevision"
-
           echo "Latest revision: $latestRevision"
-        
+
           # Assign label to the new revision
           az containerapp revision label add \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --label "$LABEL" \
             --revision "$latestRevision"
+            --yes
 
           echo "Revision $latestRevision assigned label $LABEL"

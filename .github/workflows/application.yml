@@ -67,10 +67,17 @@ jobs:
           if [ "$LIVE_LABEL" = "blue" ]; then
               DEPLOY_LABEL="green"
               PREVIOUS_LABEL="blue"
-          else
+          elif [ "$LIVE_LABEL" = "green" ]; then
               DEPLOY_LABEL="blue"
               PREVIOUS_LABEL="green"
+          else
+              # First deployment
+              DEPLOY_LABEL="blue"
+              PREVIOUS_LABEL="none"
           fi
+
+          echo "Deploy label: $DEPLOY_LABEL"
+          echo "Previous label: $PREVIOUS_LABEL"
 
           # Deploy new image
           az containerapp update \
@@ -91,9 +98,6 @@ jobs:
             --label "$DEPLOY_LABEL" \
             --revision "$latestRevision" \
             --yes
-
-          echo "Deploy label: $DEPLOY_LABEL"
-          echo "Previous label: $PREVIOUS_LABEL"
 
           # Get current blue and green revisions
           blueRevision=$(az containerapp ingress traffic show \

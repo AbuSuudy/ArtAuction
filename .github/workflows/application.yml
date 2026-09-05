@@ -119,22 +119,35 @@ jobs:
 
           echo "Assigned blue to new revision: $latestRevision"
 
-          #Get containers that no longer have a label
-          unlabelledRevisions=$(az containerapp ingress traffic show \
+          # Get current labelled revisions
+          blueRevision=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --query "[?label==null].revisionName" \
+            --query "[?label=='blue'].revisionName | [0]" \
             -o tsv)
 
-          #Deactivate old unlabelled revisions
-          if [ -z "$unlabelledRevisions" ]; then
-            echo "No unlabelled revisions found."
-          else
-            for revision in $unlabelledRevisions
-            do
+          greenRevision=$(az containerapp ingress traffic show \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "[?label=='green'].revisionName | [0]" \
+            -o tsv)
+
+          # Get all revisions
+          allRevisions=$(az containerapp revision list \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "[].name" \
+            -o tsv)
+
+          # Deactivate revisions that are neither blue nor green
+          for revision in $allRevisions
+          do
+            if [ "$revision" != "$blueRevision" ] && [ "$revision" != "$greenRevision" ]; then
+              echo "Deactivating old revision: $revision"
+
               az containerapp revision deactivate \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --revision "$revision"
-            done
-          fi
+            fi
+          done

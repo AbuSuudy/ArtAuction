@@ -132,8 +132,14 @@ jobs:
               --query "properties.latestRevisionName" \
               -o tsv)
 
-            if [[ -n "$latest" && "$latest" != "$previous_latest" ]]; then
-              echo "New revision: $latest"
+            if [[ -n "$latest" && "$latest" != "$previous_latest" ]] && \
+               [[ "$(az containerapp revision show \
+                      --name "$APP_NAME" \
+                      --resource-group "$RG" \
+                      --revision "$latest" \
+                      --query "properties.provisioningState" \
+                      -o tsv)" == "Provisioned" ]]; then
+              echo "New revision provisioned: $latest"
               break
             fi
 
@@ -160,7 +166,6 @@ jobs:
             --resource-group "$RG" \
             --query "[?label=='green'].revisionName | [0]" \
             -o tsv || true)
-
 
           # Keep the previous production slot at 100% traffic
           if [[ "$previous_label" == "blue" ]]; then
@@ -191,7 +196,6 @@ jobs:
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --revision "$revision" \
-                || echo "WARNING: Failed to deactivate $revision"
             fi
           done
 

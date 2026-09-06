@@ -124,15 +124,15 @@ jobs:
 
           for revision in $allRevisions
           do
-            if [ "$revision" != "$blueRevision" ] && [ "$revision" != "$greenRevision" ]; then
+            if [ "$revision" = "$blueRevision" ] || [ "$revision" = "$greenRevision" ]; then
+              echo "Keeping deployment slot revision: $revision"
+            else
               echo "Deactivating old revision: $revision"
 
               az containerapp revision deactivate \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --revision "$revision"
-            else
-              echo "Keeping deployment slot revision: $revision"
             fi
           done
 

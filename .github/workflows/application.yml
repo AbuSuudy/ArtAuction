@@ -345,6 +345,13 @@ jobs:
 
           fi
 
+          #Set previous latest to 100
+          az containerapp ingress traffic set \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --label-weight "$PREVIOUS_LABEL=100"
+
+
           echo "--------------------------------------------------"
           echo "Cleaning up old revisions..."
           echo "--------------------------------------------------"

@@ -85,11 +85,32 @@ jobs:
             --resource-group "$RG" \
             --image "$IMAGE"
 
-          latestRevision=$(az containerapp show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query properties.latestRevisionName \
-            -o tsv)
+          echo "Waiting for new revision to be provisioned..."
+
+          while true
+          do
+            latestRevision=$(az containerapp show \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --query properties.latestRevisionName \
+              -o tsv)
+
+            state=$(az containerapp revision show \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --revision "$latestRevision" \
+              --query properties.provisioningState \
+              -o tsv)
+
+            echo "Revision: $latestRevision, State: $state"
+
+            if [ "$state" = "Provisioned" ]; then
+              echo "Revision provisioned."
+              break
+            fi
+
+            sleep 10
+          done
 
           # Assign the deployment label to the new revision
           az containerapp revision label add \

@@ -2,6 +2,21 @@ name: Application Pipeline
 
 on:
   workflow_dispatch:
+    inputs:
+      action:
+        description: "Manage container traffic"
+        required: true
+        type: choice
+        options:
+          - promote
+          - rollback
+      app_name:
+        description: "Container app to update"
+        required: true
+        type: choice
+        options:
+          - art-auction-api
+          - art-auction-consumer
   push:
     branches:
       - main
@@ -12,6 +27,7 @@ on:
 
 jobs:
   build:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
     strategy:
@@ -195,7 +211,7 @@ jobs:
               az containerapp revision deactivate \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
-                --revision "$revision" \
+                --revision "$revision"
             fi
           done
 
@@ -203,3 +219,84 @@ jobs:
           echo "Blue:  ${blue:-<none>}"
           echo "Green: ${green:-<none>}"
           echo "New:   $latest"
+
+  promote:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'promote'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Promote latest revision to 100%
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APP_NAME="${{ github.event.inputs.app_name }}"
+          RG="${{ vars.RESOURCE_GROUP }}"
+
+          latest=$(az containerapp show \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "properties.latestRevisionName" \
+            -o tsv)
+
+          echo "Promoting: routing 100% traffic to $latest"
+
+          az containerapp ingress traffic set \
+            --name "$APP_NAME" --resource-group "$RG" \
+            --revision-weight "$latest=100"
+
+          echo "Done. $latest is now serving 100% of traffic."
+
+  rollback:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Rollback to previous revision
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APP_NAME="${{ github.event.inputs.app_name }}"
+          RG="${{ vars.RESOURCE_GROUP }}"
+
+          latest=$(az containerapp show \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "properties.latestRevisionName" \
+            -o tsv)
+
+          blue=$(az containerapp ingress traffic show \
+            --name "$APP_NAME" --resource-group "$RG" \
+            --query "[?label=='blue'].revisionName | [0]" -o tsv || true)
+
+          green=$(az containerapp ingress traffic show \
+            --name "$APP_NAME" --resource-group "$RG" \
+            --query "[?label=='green'].revisionName | [0]" -o tsv || true)
+
+          if [[ "$latest" == "$blue" ]]; then
+            previous="$green"
+          else
+            previous="$blue"
+          fi
+
+          if [[ -z "$previous" ]]; then
+            echo "No previous revision found to roll back to. Aborting."
+            exit 1
+          fi
+
+          echo "Rolling back: routing 100% traffic to $previous"
+
+          az containerapp ingress traffic set \
+            --name "$APP_NAME" --resource-group "$RG" \
+            --revision-weight "$previous=100"
+
+          echo "Done. $previous is now serving 100% of traffic."

@@ -73,7 +73,7 @@ module serviceBus 'Modules/ServiceBus.bicep' = {
   }
 }
 
-var apiAppIndex = indexOf(map(containerApps, a => a.name), 'art-auction-api')
+var apiAppIndex = indexOf(map(containerApps, a => a.name), 'art-auction-consumer')
 
 module storageAccount 'Modules/storageAccount.bicep' = {
   name: storageAccountName

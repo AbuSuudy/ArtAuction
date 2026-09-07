@@ -268,35 +268,18 @@ jobs:
           APP_NAME="${{ github.event.inputs.app_name }}"
           RG="${{ vars.RESOURCE_GROUP }}"
 
-          latest=$(az containerapp show \
+          previousRevision=$(az containerapp revision list \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --query "properties.latestRevisionName" \
+            --query "sort_by(@,&properties.createdTime)[-2].name" \
             -o tsv)
 
-          blue=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" --resource-group "$RG" \
-            --query "[?label=='blue'].revisionName | [0]" -o tsv || true)
-
-          green=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" --resource-group "$RG" \
-            --query "[?label=='green'].revisionName | [0]" -o tsv || true)
-
-          if [[ "$latest" == "$blue" ]]; then
-            previous="$green"
-          else
-            previous="$blue"
-          fi
-
-          if [[ -z "$previous" ]]; then
-            echo "No previous revision found to roll back to. Aborting."
+          if [[ -z "$previousRevision" ]]; then
+            echo "No previous revision found."
             exit 1
           fi
 
-          echo "Rolling back: routing 100% traffic to $previous"
-
           az containerapp ingress traffic set \
-            --name "$APP_NAME" --resource-group "$RG" \
-            --revision-weight "$previous=100"
-
-          echo "Done. $previous is now serving 100% of traffic."
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --revision-weight "$previousRevision=100"

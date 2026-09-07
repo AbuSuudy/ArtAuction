@@ -138,6 +138,13 @@ jobs:
             --resource-group "$RG" \
             --image "$IMAGE"
 
+          # Keep Traffic to old container to allow manual testing
+          az containerapp ingress traffic set \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --revision-weight \
+              "$previous_latest=100"
+
           # Wait for a new revision to appear
           latest=""
 
@@ -170,48 +177,19 @@ jobs:
             --revision "$latest" \
             --yes
 
-          # Re-read the Blue/Green revisions
-          blue=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='blue'].revisionName | [0]" \
-            -o tsv || true)
-
-          green=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='green'].revisionName | [0]" \
-            -o tsv || true)
-
-          # Keep the previous production slot at 100% traffic
-          if [[ "$previous_label" == "blue" ]]; then
-            az containerapp ingress traffic set \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision-weight "$blue=100"
-
-          elif [[ "$previous_label" == "green" ]]; then
-            az containerapp ingress traffic set \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision-weight "$green=100"
-          fi
-
-          # Deactivate every revision except the Blue and Green slots
+          # Deactivate old revisions
           for revision in $(az containerapp revision list \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --query "[].name" \
             -o tsv); do
 
-            if [[ "$revision" == "$blue" || "$revision" == "$green" ]]; then
-              echo "Keeping $revision"
-            else
+            if [[ "$revision" != "$blue" || "$revision" != "$green" ]]; then
               echo "Deactivating $revision"
-              az containerapp revision deactivate \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                --revision "$revision"
+                az containerapp revision deactivate \
+                  --name "$APP_NAME" \
+                  --resource-group "$RG" \
+                  --revision "$revision"    
             fi
           done
 
@@ -249,7 +227,7 @@ jobs:
             --name "$APP_NAME" --resource-group "$RG" \
             --revision-weight "$latest=100"
 
-          echo "Done. $latest is now serving 100% of traffic."
+          echo "Promote done. $latest is now serving 100% of traffic."
 
   rollback:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback'
@@ -283,3 +261,5 @@ jobs:
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --revision-weight "$previousRevision=100"
+
+          echo "Rollback done. $previousRevision is now serving 100% of traffic."

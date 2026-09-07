@@ -93,7 +93,7 @@ jobs:
             previous_label="none"
 
           elif [[ -n "$blue" && -z "$green" ]]; then
-            # Second Deployment Blue exists, so deploy to Green
+            # Second Deployment: Blue exists, so deploy to Green
             deploy_label="green"
             previous_label="blue"
 

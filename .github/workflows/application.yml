@@ -178,20 +178,20 @@ jobs:
             --yes
 
           # Deactivate old revisions
-          for revision in $(az containerapp revision list \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[].name" \
-            -o tsv); do
+          # for revision in $(az containerapp revision list \
+          #   --name "$APP_NAME" \
+          #   --resource-group "$RG" \
+          #   --query "[].name" \
+          #   -o tsv); do
 
-            if [[ "$revision" != "$blue" || "$revision" != "$green" ]]; then
-              echo "Deactivating $revision"
-                az containerapp revision deactivate \
-                  --name "$APP_NAME" \
-                  --resource-group "$RG" \
-                  --revision "$revision"    
-            fi
-          done
+          #   if [[ "$revision" != "$blue" || "$revision" != "$green" ]]; then
+          #     echo "Deactivating $revision"
+          #       az containerapp revision deactivate \
+          #         --name "$APP_NAME" \
+          #         --resource-group "$RG" \
+          #         --revision "$revision"    
+          #   fi
+          # done
 
           echo "Deployment complete"
           echo "Blue:  ${blue:-<none>}"

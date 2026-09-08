@@ -20,7 +20,7 @@ on:
           - ""
           - art-auction-api
           - art-auction-consumer
-  push:
+  push:fi
     branches:
       - main
     paths:
@@ -173,20 +173,24 @@ jobs:
             --yes
 
           # Keep the previous production slot at 100% traffic
-          previous_label=$(
-            az containerapp revision list \
+          if [["$previous_label" != "none" ]]; then
+
+            previous_revision=$(
+              az containerapp ingress traffic show \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --query "[?label=='$previous_label'].revisionName | [0]" \
+                -o tsv
+            )
+
+           az containerapp ingress traffic set \
               --name "$APP_NAME" \
               --resource-group "$RG" \
-              -o json |
-            jq -r 'sort_by(.properties.createdTime // "") | reverse | .[1].name'
-          )
+              --revision-weight "$previous_revision=100"
 
-          echo "Setting traffic to previous revision: $previous_label"
+           echo "Setting traffic to previous revision: $previous_revision"
 
-          az containerapp ingress traffic set \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --revision-weight "$previous_label=100"
+          fi
 
           # blue=$(az containerapp ingress traffic show \
           #   --name "$APP_NAME" \

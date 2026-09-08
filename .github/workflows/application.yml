@@ -180,8 +180,7 @@ jobs:
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --query "[?label=='$previous_label'].revisionName | [0]" \
-                -o tsv
-            )
+                -o tsv)
 
            az containerapp ingress traffic set \
               --name "$APP_NAME" \

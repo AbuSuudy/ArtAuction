@@ -181,6 +181,8 @@ jobs:
             jq -r 'sort_by(.properties.createdTime // "") | reverse | .[1].name'
           )
 
+          echo "Setting traffic to previous revision: $previous_label"
+
           az containerapp ingress traffic set \
             --name "$APP_NAME" \
             --resource-group "$RG" \

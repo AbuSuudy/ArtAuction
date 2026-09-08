@@ -116,13 +116,8 @@ jobs:
               --query "properties.createdTime" \
               -o tsv)
 
-            if [[ "$blue_created" < "$green_created" ]]; then
-              deploy_label="blue"
-              previous_label="green"
-            else
-              deploy_label="green"
-              previous_label="blue"
-            fi
+            deploy_label=$([[ "$blue_created" < "$green_created" ]] && echo "blue" || echo "green")
+            previous_label=$([[ "$blue_created" < "$green_created" ]] && echo "green" || echo "blue")
 
           fi
 
@@ -178,31 +173,44 @@ jobs:
             --yes
 
           # Keep the previous production slot at 100% traffic
-          blue=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='blue'].revisionName | [0]" \
-            -o tsv || true)
-
-          green=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='green'].revisionName | [0]" \
-            -o tsv || true)
-
-          echo updating traffic weights to stay in old container revision
-          if [[ "$previous_label" == "blue" ]]; then
-            az containerapp ingress traffic set \
+          $previous_label=$(
+            az containerapp revision list \
               --name "$APP_NAME" \
               --resource-group "$RG" \
-              --revision-weight "$blue=100"
+              -o json |
+            jq -r 'sort_by(.properties.createdTime // "") | reverse | .[1].name'
+          )
 
-          elif [[ "$previous_label" == "green" ]]; then
-            az containerapp ingress traffic set \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision-weight "$green=100"
-          fi
+          az containerapp ingress traffic set \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --revision-weight "$previous_label=100"
+
+          # blue=$(az containerapp ingress traffic show \
+          #   --name "$APP_NAME" \
+          #   --resource-group "$RG" \
+          #   --query "[?label=='blue'].revisionName | [0]" \
+          #   -o tsv || true)
+
+          # green=$(az containerapp ingress traffic show \
+          #   --name "$APP_NAME" \
+          #   --resource-group "$RG" \
+          #   --query "[?label=='green'].revisionName | [0]" \
+          #   -o tsv || true)
+
+          # echo updating traffic weights to stay in old container revision
+          # if [[ "$previous_label" == "blue" ]]; then
+          #   az containerapp ingress traffic set \
+          #     --name "$APP_NAME" \
+          #     --resource-group "$RG" \
+          #     --revision-weight "$blue=100"
+
+          # elif [[ "$previous_label" == "green" ]]; then
+          #   az containerapp ingress traffic set \
+          #     --name "$APP_NAME" \
+          #     --resource-group "$RG" \
+          #     --revision-weight "$green=100"
+          # fi
 
           echo "Cleaning up old revisions"
           for revision in $(az containerapp revision list \

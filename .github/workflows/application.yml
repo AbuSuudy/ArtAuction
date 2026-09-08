@@ -20,7 +20,7 @@ on:
           - ""
           - art-auction-api
           - art-auction-consumer
-  push:fi
+  push:
     branches:
       - main
     paths:

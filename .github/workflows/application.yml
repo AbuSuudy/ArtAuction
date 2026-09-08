@@ -173,7 +173,7 @@ jobs:
             --yes
 
           # Keep the previous production slot at 100% traffic
-          $previous_label=$(
+          previous_label=$(
             az containerapp revision list \
               --name "$APP_NAME" \
               --resource-group "$RG" \

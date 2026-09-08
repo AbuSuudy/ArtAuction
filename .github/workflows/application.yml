@@ -8,9 +8,9 @@ on:
         required: true
         type: choice
         options:
+          - build
           - promote
           - rollback
-          - build
       app_name:
         description: "Container app to update"
         required: false
@@ -135,18 +135,14 @@ jobs:
             --resource-group "$RG" \
             --query "properties.latestRevisionName" \
             -o tsv)
+          echo "Previous latest revision: $previous_latest"
 
           # Deploy the new image
+          echo "Updating container app $APP_NAME with image $IMAGE"
           az containerapp update \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --image "$IMAGE"
-
-          #Keep traffic to the previous revision to allow manual testing
-          az containerapp ingress traffic set \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --revision-weight "$previous_latest=100"
 
           # Wait for a new revision to appear
           latest=""
@@ -172,6 +168,7 @@ jobs:
             sleep 5
           done
 
+          echo "New revision: $latest"
           # Assign Blue/Green label to the new revision
           az containerapp revision label add \
             --name "$APP_NAME" \
@@ -206,6 +203,7 @@ jobs:
               --revision-weight "$green=100"
           fi
 
+          echo "Cleaning up old revisions"
           for revision in $(az containerapp revision list \
             --name "$APP_NAME" \
             --resource-group "$RG" \

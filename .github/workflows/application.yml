@@ -181,14 +181,16 @@ jobs:
             --yes
 
 
-          # Deactivate every revision except the Blue and Green slots
+
           for revision in $(az containerapp revision list \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --query "[].name" \
             -o tsv); do
 
-            if [[ "$revision" != "$blue" && "$revision" != "$green" ]]; then
+            if [[ "$revision" == "$blue" || "$revision" == "$green" ]]; then
+              echo "Keeping $revision"
+            else
               echo "Deactivating $revision"
               az containerapp revision deactivate \
                 --name "$APP_NAME" \

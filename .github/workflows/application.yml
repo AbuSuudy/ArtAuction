@@ -161,15 +161,14 @@ jobs:
                       --resource-group "$RG" \
                       --revision "$latest" \
                       --query "properties.provisioningState" \
-                      -o tsv)" == "Provisioned" ]]; then
-              echo "New revision provisioned: $latest"
+                      -o tsv)" == "Provisioned" ]]; then          
               break
             fi
 
             sleep 5
           done
 
-          echo "New revision: $latest"
+          echo "New revision provisioned: $latest"
           # Assign Blue/Green label to the new revision
           az containerapp revision label add \
             --name "$APP_NAME" \
@@ -191,6 +190,7 @@ jobs:
             --query "[?label=='green'].revisionName | [0]" \
             -o tsv || true)
 
+          echo updating traffic weights to stay in old container revision
           if [[ "$previous_label" == "blue" ]]; then
             az containerapp ingress traffic set \
               --name "$APP_NAME" \

@@ -197,7 +197,7 @@ jobs:
           echo "New:   $latest"
 
   promote:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'promote'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'promote' && github.event.inputs.app_name != ''
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Azure
@@ -228,7 +228,7 @@ jobs:
           echo "Promote done. $latest is now serving 100% of traffic."
 
   rollback:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback' && github.event.inputs.app_name != ''
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Azure

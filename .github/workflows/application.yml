@@ -10,9 +10,10 @@ on:
         options:
           - promote
           - rollback
+          - build
       app_name:
         description: "Container app to update"
-        required: true
+        required: false
         type: choice
         options:
           - art-auction-api
@@ -27,7 +28,7 @@ on:
 
 jobs:
   build:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build')
     runs-on: ubuntu-latest
 
     strategy:

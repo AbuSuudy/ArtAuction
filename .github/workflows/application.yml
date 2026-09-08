@@ -147,6 +147,7 @@ jobs:
           # Wait for a new revision to appear
           latest=""
 
+          echo "Waiting for new revision to be provisioned..."
           for _ in {1..60}; do
             latest=$(az containerapp show \
               --name "$APP_NAME" \

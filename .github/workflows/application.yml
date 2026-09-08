@@ -148,26 +148,26 @@ jobs:
           # Wait for a new revision to appear
           latest=""
 
-          # for _ in {1..60}; do
-          #   latest=$(az containerapp show \
-          #     --name "$APP_NAME" \
-          #     --resource-group "$RG" \
-          #     --query "properties.latestRevisionName" \
-          #     -o tsv)
+          for _ in {1..60}; do
+            latest=$(az containerapp show \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --query "properties.latestRevisionName" \
+              -o tsv)
 
-          #   if [[ -n "$latest" && "$latest" != "$previous_latest" ]] && \
-          #      [[ "$(az containerapp revision show \
-          #             --name "$APP_NAME" \
-          #             --resource-group "$RG" \
-          #             --revision "$latest" \
-          #             --query "properties.provisioningState" \
-          #             -o tsv)" == "Provisioned" ]]; then
-          #     echo "New revision provisioned: $latest"
-          #     break
-          #   fi
+            if [[ -n "$latest" && "$latest" != "$previous_latest" ]] && \
+               [[ "$(az containerapp revision show \
+                      --name "$APP_NAME" \
+                      --resource-group "$RG" \
+                      --revision "$latest" \
+                      --query "properties.provisioningState" \
+                      -o tsv)" == "Provisioned" ]]; then
+              echo "New revision provisioned: $latest"
+              break
+            fi
 
-          #   sleep 5
-          # done
+            sleep 5
+          done
 
           # Assign Blue/Green label to the new revision
           az containerapp revision label add \

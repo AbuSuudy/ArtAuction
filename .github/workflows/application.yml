@@ -14,8 +14,10 @@ on:
       app_name:
         description: "Container app to update"
         required: false
+        default: ""
         type: choice
         options:
+          - ""
           - art-auction-api
           - art-auction-consumer
   push:

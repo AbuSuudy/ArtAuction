@@ -116,8 +116,13 @@ jobs:
               --query "properties.createdTime" \
               -o tsv)
 
-            deploy_label=$([[ "$blue_created" < "$green_created" ]] && echo "blue" || echo "green")
-            previous_label=$([[ "$blue_created" < "$green_created" ]] && echo "green" || echo "blue")
+            if [[ "$blue_created" < "$green_created" ]]; then
+              deploy_label="blue"
+              previous_label="green"
+            else
+              deploy_label="green"
+              previous_label="blue"
+            fi
 
           fi
 

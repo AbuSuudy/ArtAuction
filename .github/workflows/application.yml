@@ -142,6 +142,12 @@ jobs:
             --resource-group "$RG" \
             --image "$IMAGE"
 
+          #Keep traffic to the previous revision to allow manual testing
+          az containerapp ingress traffic set \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --revision-weight "$previous_latest=100"
+
           # Wait for a new revision to appear
           latest=""
 
@@ -174,11 +180,6 @@ jobs:
             --revision "$latest" \
             --yes
 
-          #Keep traffic to the previous revision to allow manual testing
-          az containerapp ingress traffic set \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --revision-weight "$previous_latest=100"
 
           # Deactivate every revision except the Blue and Green slots
           for revision in $(az containerapp revision list \

@@ -6,7 +6,7 @@ module avmContainerRegistry 'br/public:avm/res/container-registry/registry:0.12.
   params: {
     name: acrName
     acrSku: 'Standard'
-    adminUserEnabled: true
+    acrAdminUserEnabled : true
   }
 }
 

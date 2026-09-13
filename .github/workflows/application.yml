@@ -125,12 +125,12 @@ jobs:
           echo "Current production slot: $previous_label"
 
           # Remember the current latest revision
-          previous_latest=$(az containerapp show \
+          previous_revision_name=$(az containerapp show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --query "properties.latestRevisionName" \
             -o tsv)
-          echo "Previous latest revision: $previous_latest"
+          echo "Previous latest revision: $previous_revision_name"
 
           # Deploy the new image
           echo "Updating container app $APP_NAME with image $IMAGE"
@@ -150,7 +150,7 @@ jobs:
               --query "properties.latestRevisionName" \
               -o tsv)
 
-            if [[ -n "$latest" && "$latest" != "$previous_latest" ]] && \
+            if [[ -n "$latest" && "$latest" != "$previous_revision_name" ]] && \
                [[ "$(az containerapp revision show \
                       --name "$APP_NAME" \
                       --resource-group "$RG" \
@@ -175,63 +175,38 @@ jobs:
           #Keep the previous production slot at 100% traffic
           if [["$previous_label" != "none" ]]; then
 
-            previous_revision=$(
-              az containerapp ingress traffic show \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                --query "[?label=='$previous_label'].revisionName | [0]" \
-                -o tsv)
-
            az containerapp ingress traffic set \
               --name "$APP_NAME" \
               --resource-group "$RG" \
-              --revision-weight "$previous_revision=100"
+              --revision-weight "$previous_revision_name=100"
 
            echo "Setting traffic to previous revision: $previous_revision"
 
           fi
 
-          # blue=$(az containerapp ingress traffic show \
-          #   --name "$APP_NAME" \
-          #   --resource-group "$RG" \
-          #   --query "[?label=='blue'].revisionName | [0]" \
-          #   -o tsv || true)
-
-          # green=$(az containerapp ingress traffic show \
-          #   --name "$APP_NAME" \
-          #   --resource-group "$RG" \
-          #   --query "[?label=='green'].revisionName | [0]" \
-          #   -o tsv || true)
-
-          # echo updating traffic weights to stay in old container revision
-          # if [[ "$previous_label" == "blue" ]]; then
-          #   az containerapp ingress traffic set \
-          #     --name "$APP_NAME" \
-          #     --resource-group "$RG" \
-          #     --revision-weight "$blue=100"
-
-          # elif [[ "$previous_label" == "green" ]]; then
-          #   az containerapp ingress traffic set \
-          #     --name "$APP_NAME" \
-          #     --resource-group "$RG" \
-          #     --revision-weight "$green=100"
-          # fi
-
           # echo "Cleaning up old revisions"
-          # for revision in $(az containerapp revision list \
-          #   --name "$APP_NAME" \
-          #   --resource-group "$RG" \
-          #   --query "[].name" \
-          #   -o tsv); do
+          for revision in $(az containerapp revision list \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "[].name" \
+            -o tsv); do
 
-          #   if [[ "$revision" != "$blue" && "$revision" != "$green" ]]; then
-          #     echo "Deactivating $revision"
-          #     az containerapp revision deactivate \
-          #       --name "$APP_NAME" \
-          #       --resource-group "$RG" \
-          #       --revision "$revision"
-          #   fi
-          # done
+            label=$(az containerapp show \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --query "properties.configuration.ingress.traffic[?revisionName=='$revision'].label | [0]" \
+              -o tsv)
+
+            if [[ "$label" != "blue" && "$label" != "green" ]]; then
+              echo "Deactivating $revision (label: ${label:-none})"
+
+              az containerapp revision deactivate \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --revision "$revision"
+            fi
+          done
+
 
           echo "Deployment complete"
           echo "Blue:  ${blue:-<none>}"

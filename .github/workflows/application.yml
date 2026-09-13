@@ -172,7 +172,7 @@ jobs:
             --revision "$latest" \
             --yes
 
-          Keep the previous production slot at 100% traffic
+          #Keep the previous production slot at 100% traffic
           if [["$previous_label" != "none" ]]; then
 
             previous_revision=$(

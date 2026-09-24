@@ -9,8 +9,7 @@ on:
         type: choice
         options:
           - build
-          - promote
-          - rollback
+          - switch_traffic
       app_name:
         description: "Container app to update"
         required: false
@@ -83,16 +82,12 @@ jobs:
             --query "[?label=='blue'].revisionName | [0]" \
             -o tsv || true)
 
-          green=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='green'].revisionName | [0]" \
-            -o tsv || true)
-
           # Decide which slot receives the deployment
-          if [[ -z "$blue" && -z "$green" ]]; then
+          if [[ -z "$blue" ]]; then
             # First deployment
             deploy_label="blue"
+            previous_label="none"
+
           else
             # Both exist - deploy to the weight to determin next slow
             blue_weight=$(az containerapp revision show \
@@ -114,9 +109,11 @@ jobs:
             else
               deploy_label="green"
             fi
+
           fi
 
           echo "Deploying to: $deploy_label"
+          echo "Current production slot: $previous_label"
 
           # Remember the current latest revision
           previous_revision_name=$(az containerapp revision list \
@@ -168,7 +165,7 @@ jobs:
             --yes
 
           #Keep the previous production slot at 100% traffic
-          if [[ -z "previous_revision_name"]]; then
+          if [[ "$previous_label" != "none" ]]; then
 
            az containerapp ingress traffic set \
               --name "$APP_NAME" \
@@ -229,11 +226,11 @@ jobs:
           candidate=$(az containerapp ingress traffic show \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --query "[?weight != \`100\`].revisionName | [0]" \
+            --query "[?weight == \`0\`].revisionName | [0]" \
             -o tsv)
 
           if [[ -z "$candidate" ]]; then
-            echo "No revision found with less than 100% traffic."
+            echo "No revision found with 0% traffic."
             exit 1
           fi
 
@@ -243,5 +240,3 @@ jobs:
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --revision-weight "$candidate=100"
-          
-          

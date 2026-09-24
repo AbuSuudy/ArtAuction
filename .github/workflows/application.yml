@@ -12,7 +12,7 @@ on:
           - promote
           - rollback
       app_name:
-        description: "Container app to update (leave blank for build to build all apps)"
+        description: "Container app to update"
         required: false
         default: ""
         type: choice
@@ -27,10 +27,6 @@ on:
       - "ArtAuction.API/**"
       - "ArtAuction.Consumer/**"
       - "ArtAuction.Contract/**"
-
-concurrency:
-  group: containerapp-${{ github.event.inputs.app_name || 'push' }}
-  cancel-in-progress: false
 
 jobs:
   build:
@@ -52,22 +48,17 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Log in to Azure
-        if: github.event_name == 'push' || github.event.inputs.app_name == '' || github.event.inputs.app_name == matrix.app.containerAppName
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Log in to container registry
-        if: github.event_name == 'push' || github.event.inputs.app_name == '' || github.event.inputs.app_name == matrix.app.containerAppName
+      - name: Build and push image
         uses: azure/docker-login@v1
         with:
           login-server: ${{ vars.REGISTRY_LOGIN_SERVER }}
           username: ${{ vars.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-
-      - name: Build and push image
-        if: github.event_name == 'push' || github.event.inputs.app_name == '' || github.event.inputs.app_name == matrix.app.containerAppName
-        run: |
+      - run: |
           docker build \
             -f ${{ matrix.app.dockerfile }} \
             -t ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }} \
@@ -77,7 +68,6 @@ jobs:
             ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
 
       - name: Deploy to Container App
-        if: github.event_name == 'push' || github.event.inputs.app_name == '' || github.event.inputs.app_name == matrix.app.containerAppName
         shell: bash
         run: |
           set -euo pipefail
@@ -166,17 +156,12 @@ jobs:
                       --resource-group "$RG" \
                       --revision "$latest" \
                       --query "properties.provisioningState" \
-                      -o tsv)" == "Provisioned" ]]; then
+                      -o tsv)" == "Provisioned" ]]; then          
               break
             fi
 
             sleep 5
           done
-
-          if [[ -z "$latest" || "$latest" == "$previous_revision_name" ]]; then
-            echo "::error::Timed out waiting for a new revision to provision for $APP_NAME"
-            exit 1
-          fi
 
           echo "New revision provisioned: $latest"
           # Assign Blue/Green label to the new revision
@@ -187,22 +172,16 @@ jobs:
             --revision "$latest" \
             --yes
 
-          # Keep the new revision at 0% traffic until promoted; production slot stays at 100%
+          #Keep the previous production slot at 100% traffic
           if [[ "$previous_label" != "none" ]]; then
-            az containerapp ingress traffic set \
+
+           az containerapp ingress traffic set \
               --name "$APP_NAME" \
               --resource-group "$RG" \
               --revision-weight "$previous_revision_name=100"
 
-            echo "Keeping traffic on previous revision: $previous_revision_name"
-          else
-            # First deployment ever - nothing to keep traffic on, so the new revision serves 100%
-            az containerapp ingress traffic set \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision-weight "$latest=100"
+           echo "Setting traffic to previous revision: $previous_revision_name"
 
-            echo "First deployment - setting traffic to new revision: $latest"
           fi
 
           # echo "Cleaning up old revisions"
@@ -257,18 +236,7 @@ jobs:
             --query "properties.latestRevisionName" \
             -o tsv)
 
-          latest_label=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?revisionName=='$latest'].label | [0]" \
-            -o tsv || true)
-
-          if [[ -z "$latest_label" ]]; then
-            echo "::error::Latest revision $latest has no blue/green label - refusing to promote"
-            exit 1
-          fi
-
-          echo "Promoting: routing 100% traffic to $latest (label: $latest_label)"
+          echo "Promoting: routing 100% traffic to $latest"
 
           az containerapp ingress traffic set \
             --name "$APP_NAME" --resource-group "$RG" \
@@ -285,7 +253,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Rollback to the other blue/green slot
+      - name: Rollback to previous revision
         shell: bash
         run: |
           set -euo pipefail
@@ -293,51 +261,20 @@ jobs:
           APP_NAME="${{ github.event.inputs.app_name }}"
           RG="${{ vars.RESOURCE_GROUP }}"
 
-          blue=$(az containerapp ingress traffic show \
+          previousRevision=$(az containerapp revision list \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --query "[?label=='blue'].revisionName | [0]" \
-            -o tsv || true)
+            --query "sort_by(@,&properties.createdTime)[-2].name" \
+            -o tsv)
 
-          green=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='green'].revisionName | [0]" \
-            -o tsv || true)
-
-          if [[ -z "$blue" || -z "$green" ]]; then
-            echo "::error::Both a blue and green revision must exist to roll back (blue=${blue:-<none>}, green=${green:-<none>})"
+          if [[ -z "$previousRevision" ]]; then
+            echo "No previous revision found."
             exit 1
           fi
-
-          blue_weight=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='blue'].weight | [0]" \
-            -o tsv || echo 0)
-
-          green_weight=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='green'].weight | [0]" \
-            -o tsv || echo 0)
-
-          if [[ "$blue_weight" == "100" ]]; then
-            target_label="green"
-            target_revision="$green"
-          elif [[ "$green_weight" == "100" ]]; then
-            target_label="blue"
-            target_revision="$blue"
-          else
-            echo "::error::Traffic is split or ambiguous (blue=${blue_weight}%, green=${green_weight}%) - refusing to guess a rollback target"
-            exit 1
-          fi
-
-          echo "Rolling back: routing 100% traffic to $target_label revision $target_revision"
 
           az containerapp ingress traffic set \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --revision-weight "$target_revision=100"
+            --revision-weight "$previousRevision=100"
 
-          echo "Rollback done. $target_revision ($target_label) is now serving 100% of traffic."
+          echo "Rollback done. $previousRevision is now serving 100% of traffic."

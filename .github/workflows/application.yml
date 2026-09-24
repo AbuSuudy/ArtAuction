@@ -1,25 +1,30 @@
 name: Application Pipeline
 
+# --- Blue/green deployment for Azure Container Apps -------------------------
+# Each app is kept in "multiple" revision mode with two revision labels,
+# "blue" and "green". Exactly one of them serves 100% of production traffic
+# at any time. Every run:
+#   1. builds the image and deploys it as a brand new revision at 0% traffic
+#   2. labels that revision with whichever of blue/green is currently idle
+#   3. smoke-tests it via its label-specific URL
+#   4. only then swaps 100% of traffic onto it
+#   5. deactivates the revision that lost its label two cycles ago
+#
+# Prerequisites this workflow assumes:
+#   - art-auction-api and art-auction-consumer already exist as Container
+#     Apps (this pipeline updates them, it does not provision them).
+#   - Both have ingress enabled (external or internal) - blue/green traffic
+#     splitting and labels are an ingress feature. If a given app has no
+#     ingress at all, the smoke test is skipped automatically, but the
+#     label/traffic steps still need ingress to mean anything - see the
+#     note in this thread if that's the case for ArtAuction.Consumer.
+#   - AZURE_CREDENTIALS already has rights to build in ACR and manage
+#     Container Apps revisions/ingress (the same rights the previous
+#     azure/container-apps-deploy-action step relied on).
+# ------------------------------------------------------------------------
+
 on:
   workflow_dispatch:
-    inputs:
-      action:
-        description: "Manage container traffic"
-        required: true
-        type: choice
-        options:
-          - build
-          - promote
-          - rollback
-      app_name:
-        description: "Container app to update"
-        required: false
-        default: ""
-        type: choice
-        options:
-          - ""
-          - art-auction-api
-          - art-auction-consumer
   push:
     branches:
       - main
@@ -30,7 +35,6 @@ on:
 
 jobs:
   build:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build')
     runs-on: ubuntu-latest
 
     strategy:
@@ -44,6 +48,13 @@ jobs:
             containerAppName: art-auction-consumer
             imageName: art-auction-consumer
 
+    env:
+      RESOURCE_GROUP: MassTransit-Playground
+      ACR_NAME: masstransitcontainerregistry
+      APP_NAME: ${{ matrix.app.containerAppName }}
+      IMAGE_NAME: ${{ matrix.app.imageName }}
+      DOCKERFILE: ${{ matrix.app.dockerfile }}
+
     steps:
       - uses: actions/checkout@v3
 
@@ -52,229 +63,180 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and push image
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ vars.REGISTRY_LOGIN_SERVER }}
-          username: ${{ vars.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-      - run: |
-          docker build \
-            -f ${{ matrix.app.dockerfile }} \
-            -t ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }} \
+      - name: Set up Container Apps CLI extension
+        run: az extension add --name containerapp --upgrade --only-show-errors
+
+      # Blue/green needs multiple active revisions. Safe to run every time:
+      # it's a no-op if the app is already in multiple mode.
+      - name: Ensure multiple revision mode
+        run: |
+          az containerapp revision set-mode \
+            --name "$APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --mode multiple
+
+      # Works out which label (blue/green) is currently live and which one
+      # is free for this deployment. On the very first run under this
+      # workflow neither label exists yet, so it bootstraps "blue" from
+      # whatever revision is already serving traffic first - this also
+      # replaces Azure's default "always route to latest" rule with an
+      # explicit one, so the new revision we deploy later doesn't
+      # automatically inherit production traffic before it's tested.
+      - name: Determine blue/green target
+        id: slot
+        run: |
+          set -euo pipefail
+
+          TRAFFIC_JSON=$(az containerapp ingress traffic show \
+            --name "$APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" -o json)
+
+          BG_LABEL_COUNT=$(echo "$TRAFFIC_JSON" | jq -r '[.[] | select(.label == "blue" or .label == "green")] | length')
+
+          if [ "$BG_LABEL_COUNT" = "0" ]; then
+            echo "No blue/green labels yet - bootstrapping 'blue' from the current production revision."
+            ACTIVE_REVISION=$(az containerapp show \
+              --name "$APP_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "properties.latestReadyRevisionName" -o tsv)
+
+            az containerapp revision label add \
+              --name "$APP_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              --label blue \
+              --revision "$ACTIVE_REVISION" \
+              --yes
+
+            az containerapp ingress traffic set \
+              --name "$APP_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              --label-weight blue=100
+
+            TRAFFIC_JSON=$(az containerapp ingress traffic show \
+              --name "$APP_NAME" \
+              --resource-group "$RESOURCE_GROUP" -o json)
+          fi
+
+          CURRENT_LABEL=$(echo "$TRAFFIC_JSON" | jq -r '[.[] | select(.label != null and .weight == 100)][0].label // empty')
+
+          if [ "$CURRENT_LABEL" = "blue" ]; then
+            TARGET_LABEL=green
+          else
+            TARGET_LABEL=blue
+          fi
+
+          STALE_REVISION=$(echo "$TRAFFIC_JSON" | jq -r --arg L "$TARGET_LABEL" '[.[] | select(.label == $L)][0].revisionName // empty')
+
+          echo "Current production label: ${CURRENT_LABEL:-none}"
+          echo "This deploy will use label: $TARGET_LABEL"
+
+          {
+            echo "current_label=$CURRENT_LABEL"
+            echo "target_label=$TARGET_LABEL"
+            echo "stale_revision=$STALE_REVISION"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build image in ACR
+        run: |
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "$IMAGE_NAME:$GITHUB_SHA" \
+            --file "$DOCKERFILE" \
+            --platform linux/amd64 \
             .
 
-          docker push \
-            ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
-
-      - name: Deploy to Container App
-        shell: bash
+      # Creates a new revision without sending it any production traffic -
+      # now that traffic is driven by explicit labels (not "latest"), a
+      # fresh revision defaults to 0% until we label and promote it below.
+      - name: Deploy new revision
+        id: deploy
         run: |
           set -euo pipefail
+          REVISION_SUFFIX="${GITHUB_SHA:0:7}"
 
-          APP_NAME="${{ matrix.app.containerAppName }}"
-          RG="${{ vars.RESOURCE_GROUP }}"
-          IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
-
-          # Get current Blue/Green revisions
-          blue=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='blue'].revisionName | [0]" \
-            -o tsv || true)
-
-          green=$(az containerapp ingress traffic show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[?label=='green'].revisionName | [0]" \
-            -o tsv || true)
-
-          # Decide which slot receives the deployment
-          if [[ -z "$blue" && -z "$green" ]]; then
-            # First deployment
-            deploy_label="blue"
-            previous_label="none"
-
-          elif [[ -n "$blue" && -z "$green" ]]; then
-            # Second Deployment: Blue exists, so deploy to Green
-            deploy_label="green"
-            previous_label="blue"
-
-          else
-            # Both exist - deploy to the older slot
-            blue_created=$(az containerapp revision show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision "$blue" \
-              --query "properties.createdTime" \
-              -o tsv)
-
-            green_created=$(az containerapp revision show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision "$green" \
-              --query "properties.createdTime" \
-              -o tsv)
-
-            deploy_label=$([[ "$blue_created" < "$green_created" ]] && echo "blue" || echo "green")
-            previous_label=$([[ "$blue_created" < "$green_created" ]] && echo "green" || echo "blue")
-
-          fi
-
-          echo "Deploying to: $deploy_label"
-          echo "Current production slot: $previous_label"
-
-          # Remember the current latest revision
-          previous_revision_name=$(az containerapp show \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "properties.latestRevisionName" \
-            -o tsv)
-          echo "Previous latest revision: $previous_revision_name"
-
-          # Deploy the new image
-          echo "Updating container app $APP_NAME with image $IMAGE"
           az containerapp update \
             --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --image "$IMAGE"
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_NAME.azurecr.io/$IMAGE_NAME:$GITHUB_SHA" \
+            --revision-suffix "$REVISION_SUFFIX"
 
-          # Wait for a new revision to appear
-          latest=""
+          {
+            echo "revision_suffix=$REVISION_SUFFIX"
+            echo "revision_name=$APP_NAME--$REVISION_SUFFIX"
+          } >> "$GITHUB_OUTPUT"
 
-          echo "Waiting for new revision to be provisioned..."
-          for _ in {1..60}; do
-            latest=$(az containerapp show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --query "properties.latestRevisionName" \
-              -o tsv)
-
-            if [[ -n "$latest" && "$latest" != "$previous_revision_name" ]] && \
-               [[ "$(az containerapp revision show \
-                      --name "$APP_NAME" \
-                      --resource-group "$RG" \
-                      --revision "$latest" \
-                      --query "properties.provisioningState" \
-                      -o tsv)" == "Provisioned" ]]; then          
-              break
-            fi
-
-            sleep 5
-          done
-
-          echo "New revision provisioned: $latest"
-          # Assign Blue/Green label to the new revision
+      - name: Label the new revision
+        run: |
           az containerapp revision label add \
             --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --label "$deploy_label" \
-            --revision "$latest" \
+            --resource-group "$RESOURCE_GROUP" \
+            --label "${{ steps.slot.outputs.target_label }}" \
+            --revision "${{ steps.deploy.outputs.revision_name }}" \
             --yes
 
-          #Keep the previous production slot at 100% traffic
-          if [[ "$previous_label" != "none" ]]; then
+      # Gate: this hits the label-specific URL directly, bypassing
+      # production traffic entirely. If it fails, the job stops here and
+      # nothing about production changes. Replace the "/" path with a real
+      # health endpoint for this app.
+      - name: Smoke test the new revision
+        run: |
+          set -euo pipefail
+          FQDN=$(az containerapp show \
+            --name "$APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
 
-           az containerapp ingress traffic set \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision-weight "$previous_revision_name=100"
-
-           echo "Setting traffic to previous revision: $previous_revision_name"
-
+          if [ -z "$FQDN" ] || [ "$FQDN" = "null" ]; then
+            echo "$APP_NAME has no ingress configured - skipping HTTP smoke test."
+            exit 0
           fi
 
-          # echo "Cleaning up old revisions"
-          for revision in $(az containerapp revision list \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[].name" \
-            -o tsv); do
+          LABEL_URL="https://$APP_NAME---${{ steps.slot.outputs.target_label }}.${FQDN#*.}"
+          echo "Testing $LABEL_URL"
+          curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-connrefused "$LABEL_URL/"
 
-            label=$(az containerapp show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --query "properties.configuration.ingress.traffic[?revisionName=='$revision'].label | [0]" \
-              -o tsv)
+      # Retries because the label move in the previous step can take a few
+      # seconds to fully propagate - calling traffic set immediately
+      # afterward occasionally races ahead of that and gets rejected.
+      - name: Promote new revision to production
+        run: |
+          set -euo pipefail
+          TARGET_LABEL="${{ steps.slot.outputs.target_label }}"
+          CURRENT_LABEL="${{ steps.slot.outputs.current_label }}"
 
-            if [[ "$label" != "blue" && "$label" != "green" ]]; then
-              echo "Deactivating $revision (label: ${label:-none})"
+          sleep 5
 
-              az containerapp revision deactivate \
+          for attempt in 1 2 3 4 5; do
+            if [ -n "$CURRENT_LABEL" ]; then
+              if az containerapp ingress traffic set \
                 --name "$APP_NAME" \
-                --resource-group "$RG" \
-                --revision "$revision"
+                --resource-group "$RESOURCE_GROUP" \
+                --label-weight "$TARGET_LABEL=100" "$CURRENT_LABEL=0"; then
+                exit 0
+              fi
+            else
+              if az containerapp ingress traffic set \
+                --name "$APP_NAME" \
+                --resource-group "$RESOURCE_GROUP" \
+                --label-weight "$TARGET_LABEL=100"; then
+                exit 0
+              fi
             fi
+            echo "Attempt $attempt failed, retrying in 10s..."
+            sleep 10
           done
 
+          echo "Failed to promote traffic to '$TARGET_LABEL' after 5 attempts"
+          exit 1
 
-          echo "Deployment complete"
-          echo "Blue:  ${blue:-<none>}"
-          echo "Green: ${green:-<none>}"
-          echo "New:   $latest"
-
-  promote:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'promote' && github.event.inputs.app_name != ''
-    runs-on: ubuntu-latest
-    steps:
-      - name: Log in to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Promote latest revision to 100%
-        shell: bash
+      # Tidies up the revision that lost its label two cycles ago so idle
+      # active revisions don't quietly keep costing money. The revision
+      # that just lost traffic in this cycle is left running so you can
+      # still roll back to it instantly if something goes wrong.
+      - name: Deactivate the stale revision
+        if: steps.slot.outputs.stale_revision != ''
         run: |
-          set -euo pipefail
-
-          APP_NAME="${{ github.event.inputs.app_name }}"
-          RG="${{ vars.RESOURCE_GROUP }}"
-
-          latest=$(az containerapp show \
+          az containerapp revision deactivate \
             --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "properties.latestRevisionName" \
-            -o tsv)
-
-          echo "Promoting: routing 100% traffic to $latest"
-
-          az containerapp ingress traffic set \
-            --name "$APP_NAME" --resource-group "$RG" \
-            --revision-weight "$latest=100"
-
-          echo "Promote done. $latest is now serving 100% of traffic."
-
-  rollback:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback' && github.event.inputs.app_name != ''
-    runs-on: ubuntu-latest
-    steps:
-      - name: Log in to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Rollback to previous revision
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          APP_NAME="${{ github.event.inputs.app_name }}"
-          RG="${{ vars.RESOURCE_GROUP }}"
-
-          previousRevision=$(az containerapp revision list \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "sort_by(@,&properties.createdTime)[-2].name" \
-            -o tsv)
-
-          if [[ -z "$previousRevision" ]]; then
-            echo "No previous revision found."
-            exit 1
-          fi
-
-          az containerapp ingress traffic set \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --revision-weight "$previousRevision=100"
-
-          echo "Rollback done. $previousRevision is now serving 100% of traffic."
+            --resource-group "$RESOURCE_GROUP" \
+            --revision "${{ steps.slot.outputs.stale_revision }}"

@@ -89,6 +89,10 @@ jobs:
             previous_label="none"
 
           else
+
+            blue_weight=0
+            green_weight=0
+
             # Both exist - deploy to the weight to determin next slow
             blue_weight=$(az containerapp revision show \
               --name "$APP_NAME" \
@@ -102,7 +106,7 @@ jobs:
               --resource-group "$RG" \
               --revision "$green" \
               --query "properties.trafficWeight" \
-              -o tsv) || green_weight=0
+              -o tsv)
 
             if (( blue_weight < green_weight )); then
               deploy_label="blue"

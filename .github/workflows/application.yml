@@ -90,23 +90,18 @@ jobs:
 
           else
 
-            blue_weight=0
-            green_weight=0
-
             # Both exist - deploy to the weight to determin next slow
-            blue_weight=$(az containerapp revision show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision "$blue" \
-              --query "properties.trafficWeight" \
-              -o tsv)
+            blue_weight=$(az containerapp show \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --query "properties.configuration.ingress.traffic[?label=='blue'].weight | [0]" \
+                -o tsv)
 
-            green_weight=$(az containerapp revision show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --revision "$green" \
-              --query "properties.trafficWeight" \
-              -o tsv)
+            green_weight=$(az containerapp show \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --query "properties.configuration.ingress.traffic[?label=='green'].weight | [0]" \
+                -o tsv)
 
             if (( blue_weight < green_weight )); then
               deploy_label="blue"

@@ -243,9 +243,9 @@ jobs:
 
           # Whichever color is live now, the new revision gets the other one
           if (( blue_weight > green_weight )); then
-            deploy_label="blue"
-          else
             deploy_label="green"
+          else
+            deploy_label="blue"
           fi
           echo "blue=$blue_weight green=$green_weight -> labelling $REVISION_NAME as $deploy_label"
 

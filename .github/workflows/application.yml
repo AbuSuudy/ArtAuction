@@ -177,27 +177,27 @@ jobs:
           fi
 
           # echo "Cleaning up old revisions"
-          for revision in $(az containerapp revision list \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --query "[].name" \
-            -o tsv); do
+          # for revision in $(az containerapp revision list \
+          #   --name "$APP_NAME" \
+          #   --resource-group "$RG" \
+          #   --query "[].name" \
+          #   -o tsv); do
 
-            label=$(az containerapp show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --query "properties.configuration.ingress.traffic[?revisionName=='$revision'].label | [0]" \
-              -o tsv)
+          #   label=$(az containerapp show \
+          #     --name "$APP_NAME" \
+          #     --resource-group "$RG" \
+          #     --query "properties.configuration.ingress.traffic[?revisionName=='$revision'].label | [0]" \
+          #     -o tsv)
 
-            if [[ "$label" != "blue" && "$label" != "green" ]]; then
-              echo "Deactivating $revision (label: ${label:-none})"
+          #   if [[ "$label" != "blue" && "$label" != "green" ]]; then
+          #     echo "Deactivating $revision (label: ${label:-none})"
 
-              az containerapp revision deactivate \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                --revision "$revision"
-            fi
-          done
+          #     az containerapp revision deactivate \
+          #       --name "$APP_NAME" \
+          #       --resource-group "$RG" \
+          #       --revision "$revision"
+          #   fi
+          # done
 
           echo "Deployment complete"
           echo "Blue:  ${blue:-<none>}"

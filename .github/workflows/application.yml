@@ -179,7 +179,7 @@ jobs:
             --revision "$latest" \
             --yes
 
-          # Assign Blue/Green label to the new revision
+          #Remove container app revisions older than 7 days that are not blue or green
           cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
 
           az containerapp revision list \
@@ -223,7 +223,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Promote latest revision to 100%
+      - name: Promote selected revision to 100% traffic
         shell: bash
         run: |
           set -euo pipefail
@@ -232,7 +232,7 @@ jobs:
           REVISION_NAME="${{ github.event.inputs.revision_name }}"
           RG="${{ vars.RESOURCE_GROUP }}"
 
-          # Read current weights BEFORE changing traffic
+
           blue_weight=$(az containerapp show -n "$APP_NAME" -g "$RG" \
             --query "properties.configuration.ingress.traffic[?label=='blue'].weight | [0]" -o tsv)
           green_weight=$(az containerapp show -n "$APP_NAME" -g "$RG" \
@@ -241,7 +241,6 @@ jobs:
           blue_weight=${blue_weight:-0}
           green_weight=${green_weight:-0}
 
-          # Whichever color is live now, the new revision gets the other one
           if (( blue_weight > green_weight )); then
             deploy_label="blue"
           else
@@ -249,7 +248,6 @@ jobs:
           fi
           echo "blue=$blue_weight green=$green_weight -> labelling $REVISION_NAME as $deploy_label"
 
-          # All active revisions -> 0, target -> 100
           ZEROED=$(az containerapp revision list -n "$APP_NAME" -g "$RG" \
             --query "[?properties.active && name != '$REVISION_NAME'].name" -o tsv | sed 's/$/=0/')
 

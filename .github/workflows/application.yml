@@ -105,8 +105,10 @@ jobs:
 
             if (( blue_weight < green_weight )); then
               deploy_label="blue"
+              previous_label="green"
             else
               deploy_label="green"
+              previous_label="blue"
             fi
 
           fi

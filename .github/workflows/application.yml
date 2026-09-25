@@ -199,7 +199,6 @@ jobs:
             fi
           done
 
-
           echo "Deployment complete"
           echo "Blue:  ${blue:-<none>}"
           echo "Green: ${green:-<none>}"

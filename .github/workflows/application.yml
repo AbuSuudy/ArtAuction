@@ -260,7 +260,6 @@ jobs:
             --query "properties.configuration.ingress.traffic[?revisionName=='$REVISION_NAME' && label].label | [0]" -o tsv)
 
           if [[ -z "$current_label" ]]; then
-              echo "blue=$blue_weight green=$green_weight -> labelling $REVISION_NAME as $deploy_label"
               az containerapp revision label add \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \

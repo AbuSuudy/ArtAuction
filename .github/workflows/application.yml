@@ -171,24 +171,28 @@ jobs:
 
           echo "New revision provisioned: $latest"
           # Assign Blue/Green label to the new revision
-          az containerapp revision label add \
-            --name "$APP_NAME" \
-            --resource-group "$RG" \
-            --label "$deploy_label" \
-            --revision "$latest" \
-            --yes
-
-          echo "Cleaning up revisions older than 5 days"
-          cutoff=$(date -u -d '5 days ago' +%s)
+          cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
 
           az containerapp revision list \
             --name "$APP_NAME" \
             --resource-group "$RG" \
-            --query "[?properties.active].[name, properties.createdTime]" \
+            --query "[].[name, properties.createdTime]" \
             -o tsv |
           while IFS=$'\t' read -r revision created; do
-            if (( $(date -u -d "$created" +%s) < cutoff )); then
-              echo "Deactivating $revision (created $created)"
+
+            if [[ ! "$created" < "$cutoff" ]]; then
+              continue
+            fi
+
+            label=$(az containerapp show \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --query "properties.configuration.ingress.traffic[?revisionName=='$revision'].label | [0]" \
+              -o tsv)
+
+            if [[ "$label" != "blue" && "$label" != "green" ]]; then
+              echo "Deactivating $revision (created $created, label: ${label:-none})"
+
               az containerapp revision deactivate \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \

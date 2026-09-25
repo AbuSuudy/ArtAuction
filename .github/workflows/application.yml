@@ -213,16 +213,39 @@ jobs:
       - name: Promote latest revision to 100%
         shell: bash
         run: |
-          set -euo pipefail        
-          
+          set -euo pipefail
+
           APP_NAME="${{ github.event.inputs.app_name }}"
           REVISION_NAME="${{ github.event.inputs.revision_name }}"
           RG="${{ vars.RESOURCE_GROUP }}"
 
-          # All active revisions -> 0
+          # Read current weights BEFORE changing traffic
+          blue_weight=$(az containerapp show -n "$APP_NAME" -g "$RG" \
+            --query "properties.configuration.ingress.traffic[?label=='blue'].weight | [0]" -o tsv)
+          green_weight=$(az containerapp show -n "$APP_NAME" -g "$RG" \
+            --query "properties.configuration.ingress.traffic[?label=='green'].weight | [0]" -o tsv)
+
+          blue_weight=${blue_weight:-0}
+          green_weight=${green_weight:-0}
+
+          # Whichever color is live now, the new revision gets the other one
+          if (( blue_weight > green_weight )); then
+            deploy_label="green"
+          else
+            deploy_label="blue"
+          fi
+          echo "blue=$blue_weight green=$green_weight -> labelling $REVISION_NAME as $deploy_label"
+
+          # All active revisions -> 0, target -> 100
           ZEROED=$(az containerapp revision list -n "$APP_NAME" -g "$RG" \
             --query "[?properties.active && name != '$REVISION_NAME'].name" -o tsv | sed 's/$/=0/')
 
-          # Target revision -> 100 (listed last so it overrides its own =0)
           az containerapp ingress traffic set -n "$APP_NAME" -g "$RG" \
             --revision-weight latest=0 $ZEROED "$REVISION_NAME=100"
+
+          az containerapp revision label add \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --label "$deploy_label" \
+            --revision "$REVISION_NAME" \
+            --yes

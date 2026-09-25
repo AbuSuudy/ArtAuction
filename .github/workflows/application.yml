@@ -170,6 +170,15 @@ jobs:
           done
 
           echo "New revision provisioned: $latest"
+
+          # Assign Blue/Green label to the new revision
+          az containerapp revision label add \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --label "$deploy_label" \
+            --revision "$latest" \
+            --yes
+
           # Assign Blue/Green label to the new revision
           cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
 

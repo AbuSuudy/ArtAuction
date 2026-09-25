@@ -112,7 +112,6 @@ jobs:
           fi
 
           echo "Deploying to: $deploy_label"
-          echo "Current production slot: $previous_label"
 
           # Remember the current latest revision
           previous_revision_name=$(az containerapp revision list \

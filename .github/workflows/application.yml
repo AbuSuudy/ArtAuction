@@ -221,7 +221,7 @@ jobs:
 
           # All active revisions -> 0
           ZEROED=$(az containerapp revision list -n "$APP_NAME" -g "$RG" \
-            --query "[?properties.active].name" -o tsv | sed 's/$/=0/')
+            --query "[?properties.active && name != '$REVISION_NAME'].name" -o tsv | sed 's/$/=0/')
 
           # Target revision -> 100 (listed last so it overrides its own =0)
           az containerapp ingress traffic set -n "$APP_NAME" -g "$RG" \

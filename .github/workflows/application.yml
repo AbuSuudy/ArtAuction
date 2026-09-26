@@ -131,6 +131,7 @@ jobs:
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --image "$IMAGE"
+            --revision-suffix "-${{ github.sha }}"
 
         
           #Keep the previous production slot at 100% traffic

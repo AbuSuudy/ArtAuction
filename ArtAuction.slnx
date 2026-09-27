@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/GitHub Actions/">
+    <File Path=".github/workflows/application-update.yml" />
     <File Path=".github/workflows/application.yml" />
     <File Path=".github/workflows/infra.yml" />
   </Folder>

@@ -124,7 +124,7 @@ jobs:
                 [[ "$(az containerapp revision show \
                         --name "$APP_NAME" \
                         --resource-group "$RG" \
-                        --revision "$latest" \
+                        --revision "$latestRevisionName" \
                         --query "properties.provisioningState" \
                         -o tsv)" == "Provisioned" ]]; then          
                 break

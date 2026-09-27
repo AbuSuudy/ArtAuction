@@ -102,9 +102,8 @@ jobs:
               --query "properties.latestRevisionName" \
               -o tsv)
 
-             #keep traffic to existing container
-            if [[ "$previous_revision_name" == *sha* ]]; then
-            
+            #keep traffic to existing container
+            if [[ "$previous_revision_name" == *sha* ]]; then          
                 az containerapp ingress traffic set \
                     --name "$APP_NAME" \
                     --resource-group "$RG" \

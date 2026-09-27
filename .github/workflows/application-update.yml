@@ -72,7 +72,7 @@ jobs:
           docker push \
             ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
 
-      - name: Deploy to Container App
+      - name: Deploy to Container to inactive revision
         shell: bash
         run: |
             set -euo pipefail

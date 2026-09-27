@@ -122,7 +122,7 @@ jobs:
                 --query "properties.configuration.ingress.traffic[?label=='green'].weight | [0]" \
                 -o tsv)
 
-            deploy_label=$(( blue_weight == 100)) && deploy_label="green" || deploy_label="blue
+            deploy_label=$(( blue_weight == 100)) && deploy_label="green" || deploy_label="blue"
 
             az containerapp revision label add \
                 --name "$APP_NAME" \

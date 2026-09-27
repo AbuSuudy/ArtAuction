@@ -123,7 +123,11 @@ jobs:
                 --query "properties.configuration.ingress.traffic[?label=='green'].weight | [0]" \
                 -o tsv)
 
-            deploy_label=$(( blue_weight == 100)) && deploy_label="green" || deploy_label="blue"
+            if [[ "$blue_weight" == "100" ]]; then
+                deploy_label="green"
+            else
+                deploy_label="blue"
+            fi
 
             az containerapp revision label add \
                 --name "$APP_NAME" \
@@ -181,34 +185,38 @@ jobs:
       - name: Promote selected revision to 100% traffic
         shell: bash
         run: |
-          set -euo pipefail
+            set -euo pipefail
 
-          APP_NAME="${{ github.event.inputs.app_name }}"
-          REVISION_NAME="${{ github.event.inputs.revision_name }}"
-          RG="${{ vars.RESOURCE_GROUP }}"
+            APP_NAME="${{ github.event.inputs.app_name }}"
+            REVISION_NAME="${{ github.event.inputs.revision_name }}"
+            RG="${{ vars.RESOURCE_GROUP }}"
 
-          blue_weight=$(az containerapp show -n "$APP_NAME" -g "$RG" \
+            blue_weight=$(az containerapp show -n "$APP_NAME" -g "$RG" \
             --query "properties.configuration.ingress.traffic[?label=='blue'].weight | [0]" -o tsv)
 
-          green_weight=$(az containerapp show -n "$APP_NAME" -g "$RG" \
+            green_weight=$(az containerapp show -n "$APP_NAME" -g "$RG" \
             --query "properties.configuration.ingress.traffic[?label=='green'].weight | [0]" -o tsv)
 
-          deploy_label=$(( blue_weight == 100)) && deploy_label="green" || deploy_label="blue"
+            if [[ "$blue_weight" == "100" ]]; then
+                deploy_label="green"
+            else
+                deploy_label="blue"
+            fi
 
-          ZEROED=$(az containerapp revision list -n "$APP_NAME" -g "$RG" \
+            ZEROED=$(az containerapp revision list -n "$APP_NAME" -g "$RG" \
             --query "[?properties.active && name != '$REVISION_NAME'].name" -o tsv | sed 's/$/=0/')
 
-          az containerapp ingress traffic set -n "$APP_NAME" -g "$RG" \
+            az containerapp ingress traffic set -n "$APP_NAME" -g "$RG" \
             --revision-weight latest=0 $ZEROED "$REVISION_NAME=100"
 
-          current_label=$(az containerapp show -n "$APP_NAME" -g "$RG" \
+            current_label=$(az containerapp show -n "$APP_NAME" -g "$RG" \
             --query "properties.configuration.ingress.traffic[?revisionName=='$REVISION_NAME'].label | [0]" -o tsv)
 
-          if [[ -z "$current_label" ]]; then
-              az containerapp revision label add \
+            if [[ -z "$current_label" ]]; then
+                az containerapp revision label add \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --label "$deploy_label" \
                 --revision "$REVISION_NAME" \
                 --yes
-          fi
+            fi

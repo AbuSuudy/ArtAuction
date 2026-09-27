@@ -87,6 +87,7 @@ jobs:
                 --query "[?weight==\`100\`].revisionName | [0]" \
                 -o tsv)
 
+            previous_revision_name =""
             #keep traffic to existing container
             if [[ ! -z "$CURRENT_LIVE" ]]; then
             
@@ -103,6 +104,7 @@ jobs:
             fi
 
             #update and return revsion name
+            latestRevisionName=""
             echo "Waiting for new revision to be provisioned..."
             for _ in {1..60}; do
             latestRevisionName=$(az containerapp show \

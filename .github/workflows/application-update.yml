@@ -120,7 +120,7 @@ jobs:
                 --query "properties.latestRevisionName" \
                 -o tsv)
 
-            if [[ -n "latestRevisionName" && "latestRevisionName" != "$previous_revision_name" ]] && \
+            if [[ -n "$latestRevisionName" && "$latestRevisionName" != "$previous_revision_name" ]] && \
                 [[ "$(az containerapp revision show \
                         --name "$APP_NAME" \
                         --resource-group "$RG" \

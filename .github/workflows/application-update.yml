@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - build
+          - build-and-deploy-container
           - switch_traffic
       app_name:
         description: "Container app to update"
@@ -34,8 +34,8 @@ on:
       - "ArtAuction.Contract/**"
 
 jobs:
-  build:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build')
+  build-and-deploy-container:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build-and-deploy-container')
     runs-on: ubuntu-latest
 
     strategy:
@@ -103,12 +103,28 @@ jobs:
             fi
 
             #update and return revsion name
-            latestRevisionName=$(az containerapp update \
+            latestRevisionName=""
+
+            echo "Waiting for new revision to be provisioned..."
+            for _ in {1..60}; do
+            latestRevisionName=$(az containerapp show \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
-                --image "$IMAGE" \
-                --query properties.latestRevisionName \
+                --query "properties.latestRevisionName" \
                 -o tsv)
+
+            if [[ -n "$latest" && "$latest" != "$previous_revision_name" ]] && \
+                [[ "$(az containerapp revision show \
+                        --name "$APP_NAME" \
+                        --resource-group "$RG" \
+                        --revision "$latest" \
+                        --query "properties.provisioningState" \
+                        -o tsv)" == "Provisioned" ]]; then          
+                break
+            fi
+
+            sleep 5
+            done
 
             blue_weight=$(az containerapp show \
                 --name "$APP_NAME" \

@@ -88,7 +88,7 @@ jobs:
                 -o tsv)
 
             #keep traffic to existing container
-            if [[ ! -z "$CURRENT_LIVE" ]]; then
+            if [[ "$CURRENT_LIVE" == *sha* ]]; then
             
                 previous_revision_name=$(az containerapp revision list \
                     --name "$APP_NAME" \

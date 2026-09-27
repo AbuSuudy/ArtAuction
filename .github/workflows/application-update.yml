@@ -87,6 +87,7 @@ jobs:
                 --query "[?weight==\`100\`].revisionName | [0]" \
                 -o tsv)
 
+            previous_revision_name=""
             #keep traffic to existing container
             if [[ ! -z "$CURRENT_LIVE" ]]; then
             

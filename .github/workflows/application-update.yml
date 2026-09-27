@@ -151,7 +151,7 @@ jobs:
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --label "$deploy_label" \
-                --revision "latestRevisionName" \
+                --revision "$latestRevisionName" \
                 --yes
 
             #Remove container app revisions older than 7 days that are not blue or green

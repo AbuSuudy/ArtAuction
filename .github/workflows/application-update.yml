@@ -87,7 +87,6 @@ jobs:
                 --query "[?weight==\`100\`].revisionName | [0]" \
                 -o tsv)
 
-            #previous_revision_name=""
             #keep traffic to existing container
             if [[ ! -z "$CURRENT_LIVE" ]]; then
             
@@ -111,29 +110,6 @@ jobs:
               --revision-suffix "sha-${GITHUB_SHA::7}" \
               --query "properties.latestRevisionName" \
               -o tsv)
-
-            #update and return revsion name
-            #latestRevisionName=""
-            # echo "Waiting for new revision to be provisioned..."
-            # for _ in {1..60}; do
-            # latestRevisionName=$(az containerapp show \
-            #     --name "$APP_NAME" \
-            #     --resource-group "$RG" \
-            #     --query "properties.latestRevisionName" \
-            #     -o tsv)
-
-            # if [[ -n "$latestRevisionName" && "$latestRevisionName" != "$previous_revision_name" ]] && \
-            #     [[ "$(az containerapp revision show \
-            #             --name "$APP_NAME" \
-            #             --resource-group "$RG" \
-            #             --revision "$latestRevisionName" \
-            #             --query "properties.provisioningState" \
-            #             -o tsv)" == "Provisioned" ]]; then          
-            #     break
-            # fi
-
-            # sleep 5
-            # done
 
             blue_weight=$(az containerapp show \
                 --name "$APP_NAME" \

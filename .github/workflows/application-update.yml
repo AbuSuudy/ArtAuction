@@ -103,8 +103,6 @@ jobs:
             fi
 
             #update and return revsion name
-            latestRevisionName=""
-
             echo "Waiting for new revision to be provisioned..."
             for _ in {1..60}; do
             latestRevisionName=$(az containerapp show \
@@ -113,7 +111,7 @@ jobs:
                 --query "properties.latestRevisionName" \
                 -o tsv)
 
-            if [[ -n "$latest" && "$latest" != "$previous_revision_name" ]] && \
+            if [[ -n "latestRevisionName" && "latestRevisionName" != "$previous_revision_name" ]] && \
                 [[ "$(az containerapp revision show \
                         --name "$APP_NAME" \
                         --resource-group "$RG" \

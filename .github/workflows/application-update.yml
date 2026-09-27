@@ -87,20 +87,11 @@ jobs:
                 --query "[?weight==\`100\`].revisionName | [0]" \
                 -o tsv)
 
-            #keep traffic to existing container
-            if [[ "$CURRENT_LIVE" == *sha* ]]; then
-            
-                previous_revision_name=$(az containerapp revision list \
-                    --name "$APP_NAME" \
-                    --resource-group "$RG" \
-                    --query '[?properties.trafficWeight==`100`].name | [0]' \
-                    -o tsv)
-
-                az containerapp ingress traffic set \
-                    --name "$APP_NAME" \
-                    --resource-group "$RG" \
-                    --revision-weight "$previous_revision_name=100"
-            fi
+            previous_revision_name=$(az containerapp revision list \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --query '[?properties.trafficWeight==`100`].name | [0]' \
+                -o tsv)
 
             #update container app with new image and revision suffix
             latestRevisionName=$(az containerapp update \
@@ -110,6 +101,16 @@ jobs:
               --revision-suffix "sha-${GITHUB_SHA::7}" \
               --query "properties.latestRevisionName" \
               -o tsv)
+
+             #keep traffic to existing container
+            if [[ "$previous_revision_name" == *sha* ]]; then
+            
+                az containerapp ingress traffic set \
+                    --name "$APP_NAME" \
+                    --resource-group "$RG" \
+                    --revision-weight "$previous_revision_name=100"
+            fi
+
 
             blue_weight=$(az containerapp show \
                 --name "$APP_NAME" \

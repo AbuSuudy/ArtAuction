@@ -104,7 +104,7 @@ jobs:
             fi
 
             #update container app with new image and revision suffix
-            latestRevisionName=(az containerapp update \
+            latestRevisionName=$(az containerapp update \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --image "$IMAGE" \

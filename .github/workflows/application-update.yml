@@ -81,13 +81,7 @@ jobs:
             RG="${{ vars.RESOURCE_GROUP }}"
             IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
 
-            CURRENT_LIVE=$(az containerapp ingress traffic show \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                --query "[?weight==\`100\`].revisionName | [0]" \
-                -o tsv)
-
-            previous_revision_name=$(az containerapp revision list \
+            CURRENT_LIVE=$(az containerapp revision list \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --query '[?properties.trafficWeight==`100`].name | [0]' \
@@ -103,11 +97,11 @@ jobs:
               -o tsv)
 
             #keep traffic to existing container
-            if [[ "$previous_revision_name" == *sha* ]]; then          
+            if [[ "CURRENT_LIVE" == *sha* ]]; then          
                 az containerapp ingress traffic set \
                     --name "$APP_NAME" \
                     --resource-group "$RG" \
-                    --revision-weight "$previous_revision_name=100"
+                    --revision-weight "CURRENT_LIVE=100"
             fi
 
 

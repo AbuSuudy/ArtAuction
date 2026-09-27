@@ -1,4 +1,4 @@
-name: Application Pipeline
+name: Application Pipeline 2
 
 on:
   workflow_dispatch:

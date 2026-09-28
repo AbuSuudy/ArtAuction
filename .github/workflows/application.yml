@@ -8,7 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - build-and-deploy-container
+          - build_and_deploy_container
           - switch_traffic
       app_name:
         description: "Container app to update"
@@ -34,7 +34,7 @@ on:
       - "ArtAuction.Contract/**"
 
 jobs:
-  build-and-deploy-container:
+  build_and_deploy_container:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build-and-deploy-container')
     runs-on: ubuntu-latest
 

@@ -92,7 +92,7 @@ jobs:
                 az containerapp ingress traffic set \
                     --name "$APP_NAME" \
                     --resource-group "$RG" \
-                    --revision-weight "CURRENT_LIVE=100"
+                    --revision-weight "$CURRENT_LIVE=100"
             fi
 
             #update container app with new image and revision suffix

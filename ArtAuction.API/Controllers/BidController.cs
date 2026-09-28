@@ -1,11 +1,13 @@
 ﻿using ArtAuction.Contract;
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArtAuction.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Bid.Submit")]
     public class BidController(ILogger<BidController> logger, IBus bus) : ControllerBase
     {
 

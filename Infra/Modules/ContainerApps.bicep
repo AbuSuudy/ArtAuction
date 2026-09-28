@@ -10,6 +10,9 @@ param workspaceResourceId string
 @description('Container Registry Resource ID')
 param containerRegsistryResourceId string
 
+@description('App Insights Connection String')
+param appInsightsConnectionString string
+
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
   name: '${containerAppsName}-${uniqueString(deployment().name)}'
   params: {
@@ -30,6 +33,12 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
           cpu: 1
           memory: '2.0Gi'
         }
+        env: [
+          {
+            name: 'ApplicationInsights__ConnectionString'
+            value: appInsightsConnectionString
+          }
+        ]
       }
     ]
     ingressTargetPort: 8080

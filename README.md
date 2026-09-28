@@ -24,3 +24,18 @@ az containerapp registry set --name art-auction-api --resource-group MassTransit
 ```
 Remove-AzSubscriptionDeploymentStack -Name "Development" -ActionOnUnmanage DeleteAll -Force 
 ```
+
+## Generate Token from Identity Provider using PowerShell
+
+```
+$body = @{
+    grant_type    = "client_credentials"
+    client_id     = "ebb17797-97dd-4639-99d4-071a33245217"
+    client_secret = ""
+    scope         = "api://d49faf26-5082-4caa-a823-997ad1337897/.default"
+}
+
+$response = Invoke-RestMethod -Uri "https://login.microsoftonline.com/3853050a-07fd-4295-9fec-e56ecda64939/oauth2/v2.0/token" -Method Post -Body $body
+
+$response.access_token
+```

@@ -81,22 +81,22 @@ jobs:
             RG="${{ vars.RESOURCE_GROUP }}"
             IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
 
-            CURRENT_LIVE=$(az containerapp revision list \
+            current_live=$(az containerapp revision list \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --query '[?properties.trafficWeight==`100`].name | [0]' \
                 -o tsv)
 
             #keep traffic to existing container
-            if [[ "$CURRENT_LIVE" == *sha* ]]; then          
+            if [[ "$current_live" == *sha* ]]; then          
                 az containerapp ingress traffic set \
                     --name "$APP_NAME" \
                     --resource-group "$RG" \
-                    --revision-weight "$CURRENT_LIVE=100"
+                    --revision-weight "$current_live=100"
             fi
 
             #update container app with new image and revision suffix
-            latestRevisionName=$(az containerapp update \
+            latest_revision_name=$(az containerapp update \
               --name "$APP_NAME" \
               --resource-group "$RG" \
               --image "$IMAGE" \
@@ -122,7 +122,7 @@ jobs:
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 --label "$deploy_label" \
-                --revision "$latestRevisionName" \
+                --revision "$latest_revision_name" \
                 --yes
 
             #Remove container app revisions older than 7 days that are not blue or green

@@ -44,11 +44,8 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
         ]
       }
     ]
-    ...(ingress ? {
-      ingressTargetPort: 8080
-    } : {})
-
-    disableIngress: ingress
+    ingressTargetPort: disableIngress ? null : 8080
+    disableIngress: disableIngress
     activeRevisionsMode: 'Multiple'
     environmentResourceId: environmentResourceId
   }

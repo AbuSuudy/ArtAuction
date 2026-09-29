@@ -110,7 +110,7 @@ jobs:
               --query "properties.configuration.ingress" \
               -o json)
 
-            if [[ "$ingress_exists" != "" ]]; then
+            if [[ ! -z "$ingress_exists" ]]; then
 
               blue_weight=$(az containerapp show \
                   --name "$APP_NAME" \
@@ -137,41 +137,43 @@ jobs:
                 --revision "$latest_revision_name" \
                 --yes
 
-            #Remove container app revisions older than 7 days that are not blue or green
-            cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
+            if [[ ! -z "$ingress_exists"]]; then
+              #Remove container app revisions older than 7 days that are not blue or green
+              cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
 
-            blue_revision=$(az containerapp ingress traffic show \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                --query "[?label=='blue'].revisionName | [0]" \
-                -o tsv)
+              blue_revision=$(az containerapp ingress traffic show \
+                  --name "$APP_NAME" \
+                  --resource-group "$RG" \
+                  --query "[?label=='blue'].revisionName | [0]" \
+                  -o tsv)
 
-            green_revision=$(az containerapp ingress traffic show \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                --query "[?label=='green'].revisionName | [0]" \
-                -o tsv)
+              green_revision=$(az containerapp ingress traffic show \
+                  --name "$APP_NAME" \
+                  --resource-group "$RG" \
+                  --query "[?label=='green'].revisionName | [0]" \
+                  -o tsv)
 
-            az containerapp revision list \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                -o json |
-            jq -c '.[] | {revision: .name, created: .properties.createdTime}' |
-            while read -r rev; do
-                revision=$(jq -r '.revision' <<< "$rev")
-                created=$(jq -r '.created' <<< "$rev")
+              az containerapp revision list \
+                  --name "$APP_NAME" \
+                  --resource-group "$RG" \
+                  -o json |
+              jq -c '.[] | {revision: .name, created: .properties.createdTime}' |
+              while read -r rev; do
+                  revision=$(jq -r '.revision' <<< "$rev")
+                  created=$(jq -r '.created' <<< "$rev")
 
-                [[ "$created" > "$cutoff" ]] && continue
-                [[ "$revision" == "$blue_revision" ]] && continue
-                [[ "$revision" == "$green_revision" ]] && continue
+                  [[ "$created" > "$cutoff" ]] && continue
+                  [[ "$revision" == "$blue_revision" ]] && continue
+                  [[ "$revision" == "$green_revision" ]] && continue
 
-                echo "Deactivating $revision"
+                  echo "Deactivating $revision"
 
-                az containerapp revision deactivate \
-                    --name "$APP_NAME" \
-                    --resource-group "$RG" \
-                    --revision "$revision"
-            done
+                  az containerapp revision deactivate \
+                      --name "$APP_NAME" \
+                      --resource-group "$RG" \
+                      --revision "$revision"
+              done
+            fi
 
 
   switch_traffic:

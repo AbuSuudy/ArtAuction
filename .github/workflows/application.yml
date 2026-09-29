@@ -108,7 +108,7 @@ jobs:
               --name "$APP_NAME" \
               --resource-group "$RG" \
               --query "properties.configuration.ingress" \
-              -o tsv)
+              -o json)
 
             if [[ -n "$ingress_exists" ]]; then
 

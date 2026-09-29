@@ -44,10 +44,12 @@ jobs:
           - dockerfile: ArtAuction.API/Dockerfile
             containerAppName: art-auction-api
             imageName: art-auction-api
+            containerType : api
 
           - dockerfile: ArtAuction.Consumer/Dockerfile
             containerAppName: art-auction-consumer
             imageName: art-auction-consumer
+            containerType : worker
 
     steps:
       - uses: actions/checkout@v3
@@ -72,7 +74,8 @@ jobs:
           docker push \
             ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
 
-      - name: Deploy to Container to inactive revision
+      - name: Deploy API Container to inactive revision
+        if: ${{ matrix.app.containerType == 'api' }}
         shell: bash
         run: |
             set -euo pipefail
@@ -104,31 +107,20 @@ jobs:
               --query "properties.latestRevisionName" \
               -o tsv)
 
-            ingress_exists=$(az containerapp show \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --query "properties.configuration.ingress" \
-              -o json)
+            blue_weight=$(az containerapp show \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --query "properties.configuration.ingress.traffic[?label=='blue'].weight | [0]" \
+                -o tsv)
 
-            if [[ ! -z "$ingress_exists" ]]; then
+            green_weight=$(az containerapp show \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --query "properties.configuration.ingress.traffic[?label=='green'].weight | [0]" \
+                -o tsv)
 
-              blue_weight=$(az containerapp show \
-                  --name "$APP_NAME" \
-                  --resource-group "$RG" \
-                  --query "properties.configuration.ingress.traffic[?label=='blue'].weight | [0]" \
-                  -o tsv)
+            (( blue_weight == 100 )) && deploy_label="green" || deploy_label="blue"
 
-              green_weight=$(az containerapp show \
-                  --name "$APP_NAME" \
-                  --resource-group "$RG" \
-                  --query "properties.configuration.ingress.traffic[?label=='green'].weight | [0]" \
-                  -o tsv)
-
-              (( blue_weight == 100 )) && deploy_label="green" || deploy_label="blue"
-
-            else
-              deploy_label="purple"
-            fi
 
             az containerapp revision label add \
                 --name "$APP_NAME" \
@@ -137,43 +129,81 @@ jobs:
                 --revision "$latest_revision_name" \
                 --yes
 
-            if [[ ! -z "$ingress_exists" ]]; then
-              #Remove container app revisions older than 7 days that are not blue or green
-              cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
+            #Remove container app revisions older than 7 days that are not blue or green
+            cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
 
-              blue_revision=$(az containerapp ingress traffic show \
-                  --name "$APP_NAME" \
-                  --resource-group "$RG" \
-                  --query "[?label=='blue'].revisionName | [0]" \
-                  -o tsv)
+            blue_revision=$(az containerapp ingress traffic show \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --query "[?label=='blue'].revisionName | [0]" \
+                -o tsv)
 
-              green_revision=$(az containerapp ingress traffic show \
-                  --name "$APP_NAME" \
-                  --resource-group "$RG" \
-                  --query "[?label=='green'].revisionName | [0]" \
-                  -o tsv)
+            green_revision=$(az containerapp ingress traffic show \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --query "[?label=='green'].revisionName | [0]" \
+                -o tsv)
 
-              az containerapp revision list \
-                  --name "$APP_NAME" \
-                  --resource-group "$RG" \
-                  -o json |
-              jq -c '.[] | {revision: .name, created: .properties.createdTime}' |
-              while read -r rev; do
-                  revision=$(jq -r '.revision' <<< "$rev")
-                  created=$(jq -r '.created' <<< "$rev")
+            az containerapp revision list \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                -o json |
+            jq -c '.[] | {revision: .name, created: .properties.createdTime}' |
+            while read -r rev; do
+                revision=$(jq -r '.revision' <<< "$rev")
+                created=$(jq -r '.created' <<< "$rev")
 
-                  [[ "$created" > "$cutoff" ]] && continue
-                  [[ "$revision" == "$blue_revision" ]] && continue
-                  [[ "$revision" == "$green_revision" ]] && continue
+                [[ "$created" > "$cutoff" ]] && continue
+                [[ "$revision" == "$blue_revision" ]] && continue
+                [[ "$revision" == "$green_revision" ]] && continue
 
-                  echo "Deactivating $revision"
+                echo "Deactivating $revision"
 
-                  az containerapp revision deactivate \
-                      --name "$APP_NAME" \
-                      --resource-group "$RG" \
-                      --revision "$revision"
-              done
-            fi
+                az containerapp revision deactivate \
+                    --name "$APP_NAME" \
+                    --resource-group "$RG" \
+                    --revision "$revision"
+            done
+
+      - name: Deploy worker container
+        if: ${{ matrix.app.containerType == 'worker' }}
+        shell: bash
+        run: |
+            set -euo pipefail
+
+            APP_NAME="${{ matrix.app.containerAppName }}"
+            RG="${{ vars.RESOURCE_GROUP }}"
+            IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
+
+            az containerapp update \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --image "$IMAGE" \
+              --revision-suffix "sha-${GITHUB_SHA::7}" \
+              --query "properties.latestRevisionName" \
+              -o tsv)
+
+            #Instead of using labels clear our inactive containers
+            az containerapp revision list \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                -o json |
+            jq -c '.[] | {revision: .name, created: .properties.createdTime}' |
+            while read -r rev; do
+                revision=$(jq -r '.revision' <<< "$rev")
+                created=$(jq -r '.created' <<< "$rev")
+
+                [[ "$created" > "$cutoff" ]] && continue
+                [[ "$revision" == "$blue_revision" ]] && continue
+                [[ "$revision" == "$green_revision" ]] && continue
+
+                echo "Deactivating $revision"
+
+                az containerapp revision deactivate \
+                    --name "$APP_NAME" \
+                    --resource-group "$RG" \
+                    --revision "$revision"
+            done
 
 
   switch_traffic:

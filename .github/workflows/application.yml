@@ -104,19 +104,29 @@ jobs:
               --query "properties.latestRevisionName" \
               -o tsv)
 
-            blue_weight=$(az containerapp show \
+              ingress_exists=$(az containerapp show \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
-                --query "properties.configuration.ingress.traffic[?label=='blue'].weight | [0]" \
+                --query "properties.configuration.ingress" \
                 -o tsv)
 
-            green_weight=$(az containerapp show \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                --query "properties.configuration.ingress.traffic[?label=='green'].weight | [0]" \
-                -o tsv)
+            if [[ -n "$ingress_exists" ]] then
+              blue_weight=$(az containerapp show \
+                  --name "$APP_NAME" \
+                  --resource-group "$RG" \
+                  --query "properties.configuration.ingress.traffic[?label=='blue'].weight | [0]" \
+                  -o tsv)
 
-            (( blue_weight == 100 )) && deploy_label="green" || deploy_label="blue"
+              green_weight=$(az containerapp show \
+                  --name "$APP_NAME" \
+                  --resource-group "$RG" \
+                  --query "properties.configuration.ingress.traffic[?label=='green'].weight | [0]" \
+                  -o tsv)
+
+              (( blue_weight == 100 )) && deploy_label="green" || deploy_label="blue"
+            else
+              deploy_label="blue"
+            fi
 
             az containerapp revision label add \
                 --name "$APP_NAME" \

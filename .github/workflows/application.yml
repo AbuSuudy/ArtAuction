@@ -110,7 +110,7 @@ jobs:
               --query "properties.configuration.ingress" \
               -o json)
 
-            if [[ "$ingress_exists" != "null" && -n "$ingress_exists" ]]; then
+            if [[ "$ingress_exists" != "null" && "$ingress_exists" != "" && "$ingress_exists" != "None" ]]; then
 
               blue_weight=$(az containerapp show \
                   --name "$APP_NAME" \

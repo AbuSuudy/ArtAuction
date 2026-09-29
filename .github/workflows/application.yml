@@ -77,6 +77,9 @@ jobs:
         run: |
             set -euo pipefail
 
+            az extension remove --name containerapp
+            az extension add --name containerapp --upgrade
+
             APP_NAME="${{ matrix.app.containerAppName }}"
             RG="${{ vars.RESOURCE_GROUP }}"
             IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"

@@ -183,6 +183,7 @@ jobs:
               --query "properties.latestRevisionName" \
               -o tsv)
 
+            #TO-DO!
             #Instead of using labels clear our inactive containers
             az containerapp revision list \
                 --name "$APP_NAME" \

@@ -35,7 +35,7 @@ on:
 
 jobs:
   build_and_deploy_container:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build-and-deploy-container')
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build_and_deploy_container')
     runs-on: ubuntu-latest
 
     strategy:

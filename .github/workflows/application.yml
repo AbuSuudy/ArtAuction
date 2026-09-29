@@ -121,7 +121,6 @@ jobs:
 
             (( blue_weight == 100 )) && deploy_label="green" || deploy_label="blue"
 
-
             az containerapp revision label add \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
@@ -183,20 +182,21 @@ jobs:
               --query "properties.latestRevisionName" \
               -o tsv)
 
-            #TO-DO!
-            #Instead of using labels clear our inactive containers
+            #Remove container app revisions older than 7 days that are not blue or green
+            cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
+
             az containerapp revision list \
                 --name "$APP_NAME" \
                 --resource-group "$RG" \
                 -o json |
-            jq -c '.[] | {revision: .name, created: .properties.createdTime}' |
+            jq -c '.[] 
+                | select(.properties.active == false)
+                | {revision: .name, created: .properties.createdTime}' |
             while read -r rev; do
                 revision=$(jq -r '.revision' <<< "$rev")
                 created=$(jq -r '.created' <<< "$rev")
 
                 [[ "$created" > "$cutoff" ]] && continue
-                [[ "$revision" == "$blue_revision" ]] && continue
-                [[ "$revision" == "$green_revision" ]] && continue
 
                 echo "Deactivating $revision"
 
@@ -205,7 +205,6 @@ jobs:
                     --resource-group "$RG" \
                     --revision "$revision"
             done
-
 
   switch_traffic:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'switch_traffic' && github.event.inputs.app_name != ''

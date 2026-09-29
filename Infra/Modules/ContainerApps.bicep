@@ -13,6 +13,9 @@ param containerRegsistryResourceId string
 @description('App Insights Connection String')
 param appInsightsConnectionString string
 
+@description('Whether to disable all ingress traffic for this container app (e.g. worker services with no HTTP endpoint)')
+param disableIngress bool = false
+
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
   name: '${containerAppsName}-${uniqueString(deployment().name)}'
   params: {
@@ -41,7 +44,11 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
         ]
       }
     ]
-    ingressTargetPort: 8080
+    ...(ingress ? {
+      ingressTargetPort: 8080
+    } : {})
+
+    disableIngress: ingress
     activeRevisionsMode: 'Multiple'
     environmentResourceId: environmentResourceId
   }

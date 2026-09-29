@@ -16,6 +16,9 @@ param appInsightsConnectionString string
 @description('Whether to disable all ingress traffic for this container app (e.g. worker services with no HTTP endpoint)')
 param disableIngress bool = false
 
+@description('Multiple or Single')
+param activeRevisionsMode string
+
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
   name: '${containerAppsName}-${uniqueString(deployment().name)}'
   params: {
@@ -46,7 +49,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
     ]
     ingressTargetPort: disableIngress ? null : 8080
     disableIngress: disableIngress
-    activeRevisionsMode: 'Multiple'
+    activeRevisionsMode: activeRevisionsMode
     environmentResourceId: environmentResourceId
   }
 }

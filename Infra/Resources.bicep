@@ -48,8 +48,8 @@ module containerEnvironment 'Modules/ContainerEnvironment.bicep' = {
 }
 
 var containerApps = [
-  { name: 'art-auction-api', disableIngress: false }
-  { name: 'art-auction-consumer', disableIngress: true }
+  { name: 'art-auction-api', disableIngress: false, activeRevisionsMode: 'Multiple' }
+  { name: 'art-auction-consumer', disableIngress: true, activeRevisionsMode: 'Single' }
 ]
 
 module container 'Modules/ContainerApps.bicep' = [
@@ -62,6 +62,7 @@ module container 'Modules/ContainerApps.bicep' = [
       environmentResourceId: containerEnvironment.outputs.resourceId
       appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
       disableIngress: containerApp.disableIngress
+      activeRevisionsMode : containerApp.activeRevisionsMode
     }
   }
 ]

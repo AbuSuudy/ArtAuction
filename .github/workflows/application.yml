@@ -77,7 +77,7 @@ jobs:
         run: |
             set -euo pipefail
 
-            az extension remove --name containerapp
+
             az extension add --name containerapp --upgrade
 
             APP_NAME="${{ matrix.app.containerAppName }}"

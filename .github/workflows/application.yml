@@ -77,9 +77,6 @@ jobs:
         run: |
             set -euo pipefail
 
-
-            az extension add --name containerapp --upgrade
-
             APP_NAME="${{ matrix.app.containerAppName }}"
             RG="${{ vars.RESOURCE_GROUP }}"
             IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
@@ -113,7 +110,7 @@ jobs:
               --query "properties.configuration.ingress" \
               -o json)
 
-            if [[ "$ingress_exists" != "null" && "$ingress_exists" != "" && "$ingress_exists" != "None" ]]; then
+            if [[ "$ingress_exists" != "" ]]; then
 
               blue_weight=$(az containerapp show \
                   --name "$APP_NAME" \

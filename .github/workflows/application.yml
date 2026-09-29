@@ -179,8 +179,7 @@ jobs:
               --resource-group "$RG" \
               --image "$IMAGE" \
               --revision-suffix "sha-${GITHUB_SHA::7}" \
-              --query "properties.latestRevisionName" \
-              -o tsv)
+              -o tsv
 
             #Remove container app revisions older than 7 days that are not blue or green
             cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)

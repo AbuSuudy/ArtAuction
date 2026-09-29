@@ -127,7 +127,7 @@ jobs:
               (( blue_weight == 100 )) && deploy_label="green" || deploy_label="blue"
 
             else
-              deploy_label="none"
+              deploy_label="purple"
             fi
 
             az containerapp revision label add \

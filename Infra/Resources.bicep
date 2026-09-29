@@ -48,8 +48,8 @@ module containerEnvironment 'Modules/ContainerEnvironment.bicep' = {
 }
 
 var containerApps = [
-  { name: 'art-auction-api', disableIngress: true }
-  { name: 'art-auction-consumer', disableIngress: false }
+  { name: 'art-auction-api', disableIngress: false }
+  { name: 'art-auction-consumer', disableIngress: true }
 ]
 
 module container 'Modules/ContainerApps.bicep' = [

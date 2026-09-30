@@ -24,3 +24,5 @@ module iams 'roleAssignments.bicep' = [
     }
   }
 ]
+
+output resourceId string = servicebus.outputs.resourceId

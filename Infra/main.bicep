@@ -23,6 +23,12 @@ param serviceBusName string
 @description('Storage Account')
 param storageAccountName string
 
+@description('Key Vault Name')
+param keyVaultName string
+
+@description('Network Security Perimeter Name')
+param nspName string
+
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: resourceGroupName
   location: 'NorthEurope'
@@ -38,5 +44,7 @@ module resources 'Resources.bicep' = {
     logAnalyticsName: logAnalyticsName
     serviceBusName: serviceBusName
     storageAccountName: storageAccountName
+    keyVaultName: keyVaultName
+    nspName: nspName
   }
 }

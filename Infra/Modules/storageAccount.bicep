@@ -27,3 +27,5 @@ module iams 'roleAssignments.bicep' = {
     scopeResourceId: storageAccount.outputs.resourceId
   }
 }
+
+output resourceId string = storageAccount.outputs.resourceId

@@ -16,6 +16,19 @@ param serviceBusName string
 @description('Storage Account')
 param storageAccountName string
 
+@description('Key Vault Name')
+param keyVaultName string
+
+@description('Network Security Perimeter Name')
+param nspName string
+
+module keyVault 'Modules/KeyVault.bicep' = {
+  name: keyVaultName
+  params: {
+    keyVaultName: keyVaultName
+  }
+}
+
 module logAnalytics 'Modules/LogAnalytics.bicep' = {
   name: logAnalyticsName
   params: {
@@ -83,5 +96,18 @@ module storageAccount 'Modules/storageAccount.bicep' = {
   params: {
     storageAccountName: storageAccountName
     containerIdentity: container[apiAppIndex].outputs.systemAssignedMIPrincipalId
+  }
+}
+
+module networkSecurityPerimeter 'Modules/NetworkSecurityPerimeter.bicep' = {
+  name: nspName
+  params: {
+    nspName: nspName
+    associatedResources: [
+      { name: keyVaultName, resourceId: keyVault.outputs.resourceId }
+      { name: serviceBusName, resourceId: serviceBus.outputs.resourceId }
+      { name: logAnalyticsName, resourceId: logAnalytics.outputs.resourceId }
+      { name: storageAccountName, resourceId: storageAccount.outputs.resourceId }
+    ]
   }
 }

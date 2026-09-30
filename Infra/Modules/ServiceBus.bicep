@@ -10,6 +10,9 @@ module servicebus 'br/public:avm/res/service-bus/namespace:0.16.2' = {
       name: 'Standard'
       capacity: 1
     }
+    managedIdentities: {
+      systemAssigned: true
+    }
   }
 }
 

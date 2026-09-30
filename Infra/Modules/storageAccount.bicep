@@ -15,6 +15,9 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.32.1' = {
     networkAcls: {
       defaultAction: 'Allow'
     }
+    managedIdentities: {
+      systemAssigned: true
+    }
   }
 }
 

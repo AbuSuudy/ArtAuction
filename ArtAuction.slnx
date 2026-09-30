@@ -12,7 +12,9 @@
     <File Path="Infra/Modules/ContainerApps.bicep" />
     <File Path="Infra/Modules/ContainerEnvironment.bicep" />
     <File Path="Infra/Modules/ContainerRegistry.bicep" />
+    <File Path="Infra/Modules/KeyVault.bicep" />
     <File Path="Infra/Modules/LogAnalytics.bicep" />
+    <File Path="Infra/Modules/NetworkSecurityPerimeter.bicep" />
     <File Path="Infra/Modules/roleAssignments.bicep" />
     <File Path="Infra/Modules/ServiceBus.bicep" />
     <File Path="Infra/Modules/storageAccount.bicep" />

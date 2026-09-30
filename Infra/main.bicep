@@ -34,7 +34,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   location: 'NorthEurope'
 }
 
-module resources 'Resources.bicep' = {
+module resources 'resources.bicep' = {
   name: 'Resources'
   scope: resourceGroup
   params: {

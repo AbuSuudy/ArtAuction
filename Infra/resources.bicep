@@ -22,21 +22,21 @@ param keyVaultName string
 @description('Network Security Perimeter Name')
 param nspName string
 
-module keyVault 'Modules/KeyVault.bicep' = {
+module keyVault 'Modules/keyVault.bicep' = {
   name: keyVaultName
   params: {
     keyVaultName: keyVaultName
   }
 }
 
-module logAnalytics 'Modules/LogAnalytics.bicep' = {
+module logAnalytics 'Modules/logAnalytics.bicep' = {
   name: logAnalyticsName
   params: {
     logAnalyticsName: logAnalyticsName
   }
 }
 
-module appInsights 'Modules/AppInsight.bicep' = {
+module appInsights 'Modules/appInsight.bicep' = {
   name: appInsightsName
   params: {
     appInsightsName: appInsightsName
@@ -44,14 +44,14 @@ module appInsights 'Modules/AppInsight.bicep' = {
   }
 }
 
-module containerRegistry 'Modules/ContainerRegistry.bicep' = {
+module containerRegistry 'Modules/containerRegistry.bicep' = {
   name: acrName
   params: {
     acrName: acrName
   }
 }
 
-module containerEnvironment 'Modules/ContainerEnvironment.bicep' = {
+module containerEnvironment 'Modules/containerEnvironment.bicep' = {
   name: environmentName
   params: {
     environmentName: environmentName
@@ -65,7 +65,7 @@ var containerApps = [
   { name: 'art-auction-consumer', disableIngress: true, activeRevisionsMode: 'Single' }
 ]
 
-module container 'Modules/ContainerApps.bicep' = [
+module container 'Modules/containerApps.bicep' = [
   for (containerApp, i) in containerApps: {
     name: 'container-${containerApp.name}'
     params: {
@@ -81,7 +81,7 @@ module container 'Modules/ContainerApps.bicep' = [
 ]
 
 var identites = map(container, c => c.outputs.systemAssignedMIPrincipalId)
-module serviceBus 'Modules/ServiceBus.bicep' = {
+module serviceBus 'Modules/serviceBus.bicep' = {
   name: serviceBusName
   params: {
     serviceBusName: serviceBusName
@@ -99,7 +99,7 @@ module storageAccount 'Modules/storageAccount.bicep' = {
   }
 }
 
-module networkSecurityPerimeter 'Modules/NetworkSecurityPerimeter.bicep' = {
+module networkSecurityPerimeter 'Modules/networkSecurityPerimeter.bicep' = {
   name: nspName
   params: {
     nspName: nspName

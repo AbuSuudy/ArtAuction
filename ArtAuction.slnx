@@ -8,15 +8,15 @@
     <File Path="Infra/Resources.bicep" />
   </Folder>
   <Folder Name="/Infra/Modules/">
-    <File Path="Infra/Modules/AppInsight.bicep" />
-    <File Path="Infra/Modules/ContainerApps.bicep" />
-    <File Path="Infra/Modules/ContainerEnvironment.bicep" />
-    <File Path="Infra/Modules/ContainerRegistry.bicep" />
-    <File Path="Infra/Modules/KeyVault.bicep" />
-    <File Path="Infra/Modules/LogAnalytics.bicep" />
-    <File Path="Infra/Modules/NetworkSecurityPerimeter.bicep" />
+    <File Path="Infra/Modules/appInsight.bicep" />
+    <File Path="Infra/Modules/containerApps.bicep" />
+    <File Path="Infra/Modules/containerEnvironment.bicep" />
+    <File Path="Infra/Modules/containerRegistry.bicep" />
+    <File Path="Infra/Modules/keyVault.bicep" />
+    <File Path="Infra/Modules/logAnalytics.bicep" />
+    <File Path="Infra/Modules/networkSecurityPerimeter.bicep" />
     <File Path="Infra/Modules/roleAssignments.bicep" />
-    <File Path="Infra/Modules/ServiceBus.bicep" />
+    <File Path="Infra/Modules/serviceBus.bicep" />
     <File Path="Infra/Modules/storageAccount.bicep" />
   </Folder>
   <Folder Name="/Infra/Params/">

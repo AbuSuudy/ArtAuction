@@ -18,11 +18,6 @@ on:
           - ""
           - art-auction-consumer
 
-      revision_name:
-        description: "Revision to send 100% traffic to"
-        required: false
-        default: ""
-        type: string
   push:
     branches:
       - main
@@ -41,7 +36,6 @@ jobs:
           - dockerfile: ArtAuction.Consumer/Dockerfile
             containerAppName: art-auction-consumer
             imageName: art-auction-consumer
-            containerType : worker
 
     steps:
       - uses: actions/checkout@v3

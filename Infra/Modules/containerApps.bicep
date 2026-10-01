@@ -57,12 +57,10 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
     disableIngress: disableIngress
     activeRevisionsMode: activeRevisionsMode
     environmentResourceId: environmentResourceId
-    scaleSettings: minReplicas != null && maxReplicas != null
-      ? {
-          minReplicas: minReplicas
-          maxReplicas: maxReplicas
-        }
-      : {}
+    scaleSettings: {
+        minReplicas: minReplicas ?? 1
+        maxReplicas: maxReplicas ?? 3
+    }
   }
 }
 

@@ -59,7 +59,9 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
     environmentResourceId: environmentResourceId
     scaleSettings: {
       minReplicas: minReplicas
-      maxReplicas: maxReplicas
+       maxReplicas != null ? {
+        maxReplicas: maxReplicas
+      } : {}
     }
   }
 }

@@ -101,15 +101,18 @@ module storageAccount 'Modules/storageAccount.bicep' = {
   }
 }
 
+//External container apps need to talk to log analytics works space to needs to be more lenient on the access mode workspace.
 module networkSecurityPerimeter 'Modules/networkSecurityPerimeter.bicep' = {
   name: nspName
   params: {
     nspName: nspName
     associatedResources: [
-      { name: keyVaultName, resourceId: keyVault.outputs.resourceId }
-      { name: serviceBusName, resourceId: serviceBus.outputs.resourceId }
-      { name: logAnalyticsName, resourceId: logAnalytics.outputs.resourceId }
-      { name: storageAccountName, resourceId: storageAccount.outputs.resourceId }
+      { name: keyVaultName, resourceId: keyVault.outputs.resourceId, accessMode: 'Enforced' }
+      { name: serviceBusName, resourceId: serviceBus.outputs.resourceId, accessMode: 'Enforced' }
+      { name: logAnalyticsName, resourceId: logAnalytics.outputs.resourceId, accessMode: 'Learning' }
+      { name: storageAccountName, resourceId: storageAccount.outputs.resourceId, accessMode: 'Enforced' }
     ]
+    logAnalyticsWorkspaceName: logAnalyticsName
+    logAnalyticsWorkspaceResourceId: logAnalytics.outputs.resourceId
   }
 }

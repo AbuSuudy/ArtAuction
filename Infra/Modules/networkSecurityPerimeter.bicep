@@ -4,16 +4,17 @@ param nspName string
 @description('Profile name for the perimeter')
 param profileName string = 'default'
 
-@description('Resources to associate with the perimeter profile')
+@description('Resources to associate with the perimeter profile, each with its own access mode (Learning | Enforced | Audit)')
 param associatedResources array
 
-@description('Access mode for the resource associations')
-@allowed([
-  'Learning'
-  'Enforced'
-  'Audit'
-])
-param accessMode string = 'Enforced'
+@description('Log Analytics Workspace name to send NSP access logs to')
+param logAnalyticsWorkspaceName string
+
+@description('Log Analytics Workspace resource id to send NSP access logs to')
+param logAnalyticsWorkspaceResourceId string
+
+@description('Retention, in days, for the NSPAccessLogs table in the Log Analytics workspace')
+param nspAccessLogsRetentionInDays int = 7
 
 resource nsp 'Microsoft.Network/networkSecurityPerimeters@2024-07-01' = {
   name: nspName
@@ -52,10 +53,20 @@ resource associations 'Microsoft.Network/networkSecurityPerimeters/resourceAssoc
       profile: {
         id: profile.id
       }
-      accessMode: accessMode
+      accessMode: resource.accessMode
     }
   }
 ]
+
+module diagnostics 'nspDiagnostics.bicep' = {
+  name: '${nspName}-diagnostics'
+  params: {
+    nspName: nsp.name
+    logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
+    logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId
+    nspAccessLogsRetentionInDays: nspAccessLogsRetentionInDays
+  }
+}
 
 output resourceId string = nsp.id
 output profileId string = profile.id

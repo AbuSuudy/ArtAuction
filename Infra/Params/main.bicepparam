@@ -1,6 +1,6 @@
 using '../main.bicep'
 
-param logAnalyticsName = 'log-analytics-001'
+param logAnalyticsName = 'log-analytics-002'
 param appInsightsName = 'app-insight-001'
 param acrName = 'masstransitcontainerregistry'
 param environmentName = 'container-environment-001'

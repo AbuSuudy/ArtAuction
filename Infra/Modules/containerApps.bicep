@@ -23,7 +23,7 @@ param activeRevisionsMode string
 param minReplicas int
 
 @description('Maximum number of replicas')
-param maxReplicas int
+param maxReplicas int?
 
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
   name: '${containerAppsName}-${uniqueString(deployment().name)}'

@@ -3,7 +3,7 @@ param serviceBusName string
 param identites array
 
 module servicebus 'br/public:avm/res/service-bus/namespace:0.16.2' = {
-  name: '${serviceBusName}-${uniqueString(deployment().name)}'
+  name: '${serviceBusName}-${uniqueString(resourceGroup().id, serviceBusName)}'
   params: {
     name: serviceBusName
     skuObject: {

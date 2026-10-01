@@ -2,7 +2,7 @@
 param logAnalyticsName string
 
 module workspace 'br/public:avm/res/operational-insights/workspace:0.15.1' = {
-  name: '${logAnalyticsName}-${uniqueString(deployment().name)}'
+  name: '${logAnalyticsName}-${uniqueString(resourceGroup().id, logAnalyticsName)}'
   params: {
     name: logAnalyticsName
     managedIdentities: {

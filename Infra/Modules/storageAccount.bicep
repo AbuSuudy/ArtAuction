@@ -5,7 +5,7 @@ param storageAccountName string
 param containerIdentity string
 
 module storageAccount 'br/public:avm/res/storage/storage-account:0.32.1' = {
-  name: '${storageAccountName}-${uniqueString(deployment().name)}'
+  name: '${storageAccountName}-${uniqueString(resourceGroup().id, storageAccountName)}'
   params: {
     name: storageAccountName
     kind: 'StorageV2'
@@ -23,7 +23,7 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.32.1' = {
 
 //Storage Table Data Contributor
 module iams 'roleAssignments.bicep' = {
-  name: '${storageAccountName}-Role-${uniqueString(deployment().name)}'
+  name: '${storageAccountName}-Role-${uniqueString(resourceGroup().id, storageAccountName)}'
   params: {
     principalId: containerIdentity
     roleDefinitionId: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'

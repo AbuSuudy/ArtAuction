@@ -2,6 +2,7 @@
   <Folder Name="/GitHub Actions/">
     <File Path=".github/workflows/api-container.yml" />
     <File Path=".github/workflows/infra.yml" />
+    <File Path=".github/workflows/worker-container.yml" />
     <File Path="worker-container.yml" />
   </Folder>
   <Folder Name="/Infra/">

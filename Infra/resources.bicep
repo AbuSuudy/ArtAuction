@@ -109,7 +109,7 @@ module networkSecurityPerimeter 'Modules/networkSecurityPerimeter.bicep' = {
     associatedResources: [
       { name: keyVaultName, resourceId: keyVault.outputs.resourceId, accessMode: 'Enforced' }
       { name: serviceBusName, resourceId: serviceBus.outputs.resourceId, accessMode: 'Enforced' }
-      { name: logAnalyticsName, resourceId: logAnalytics.outputs.resourceId, accessMode: 'Learning' }
+      { name: logAnalyticsName, resourceId: logAnalytics.outputs.resourceId, accessMode: 'Transition' }
       { name: storageAccountName, resourceId: storageAccount.outputs.resourceId, accessMode: 'Enforced' }
     ]
     logAnalyticsWorkspaceName: logAnalyticsName

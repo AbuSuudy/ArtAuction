@@ -20,7 +20,7 @@ param disableIngress bool = false
 param activeRevisionsMode string
 
 @description('Minimum number of replicas')
-param minReplicas int
+param minReplicas int?
 
 @description('Maximum number of replicas')
 param maxReplicas int?

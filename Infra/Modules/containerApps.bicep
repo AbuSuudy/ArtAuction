@@ -20,10 +20,10 @@ param disableIngress bool = false
 param activeRevisionsMode string
 
 @description('Minimum number of replicas')
-param minReplicas int?
+param minReplicas int
 
 @description('Maximum number of replicas')
-param maxReplicas int?
+param maxReplicas int
 
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
   name: '${containerAppsName}-${uniqueString(deployment().name)}'
@@ -58,8 +58,8 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
     activeRevisionsMode: activeRevisionsMode
     environmentResourceId: environmentResourceId
     scaleSettings: {
-        minReplicas: minReplicas ?? 1
-        maxReplicas: maxReplicas ?? 3
+        minReplicas: minReplicas
+        maxReplicas: maxReplicas
     }
   }
 }

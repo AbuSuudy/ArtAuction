@@ -1,4 +1,4 @@
-name: Application Pipeline
+name: API Container Pipeline
 
 on:
   workflow_dispatch:
@@ -18,7 +18,6 @@ on:
         options:
           - ""
           - art-auction-api
-          - art-auction-consumer
 
       revision_name:
         description: "Revision to send 100% traffic to"
@@ -30,7 +29,6 @@ on:
       - main
     paths:
       - "ArtAuction.API/**"
-      - "ArtAuction.Consumer/**"
       - "ArtAuction.Contract/**"
 
 jobs:
@@ -44,12 +42,6 @@ jobs:
           - dockerfile: ArtAuction.API/Dockerfile
             containerAppName: art-auction-api
             imageName: art-auction-api
-            containerType : api
-
-          - dockerfile: ArtAuction.Consumer/Dockerfile
-            containerAppName: art-auction-consumer
-            imageName: art-auction-consumer
-            containerType : worker
 
     steps:
       - uses: actions/checkout@v3
@@ -75,7 +67,6 @@ jobs:
             ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
 
       - name: Deploy API Container to inactive revision
-        if: ${{ matrix.app.containerType == 'api' }}
         shell: bash
         run: |
             set -euo pipefail
@@ -164,47 +155,6 @@ jobs:
                     --revision "$revision"
             done
 
-      - name: Deploy worker container
-        if: ${{ matrix.app.containerType == 'worker' }}
-        shell: bash
-        run: |
-            set -euo pipefail
-
-            APP_NAME="${{ matrix.app.containerAppName }}"
-            RG="${{ vars.RESOURCE_GROUP }}"
-            IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
-
-            az containerapp update \
-              --name "$APP_NAME" \
-              --resource-group "$RG" \
-              --image "$IMAGE" \
-              --revision-suffix "sha-${GITHUB_SHA::7}" \
-              -o tsv
-
-            #Remove container app revisions older than 7 days that are not blue or green
-            cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
-
-            az containerapp revision list \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                -o json |
-            jq -c '.[] 
-                | select(.properties.active == false)
-                | {revision: .name, created: .properties.createdTime}' |
-            while read -r rev; do
-                revision=$(jq -r '.revision' <<< "$rev")
-                created=$(jq -r '.created' <<< "$rev")
-
-                [[ "$created" > "$cutoff" ]] && continue
-
-                echo "Deactivating $revision"
-
-                az containerapp revision deactivate \
-                    --name "$APP_NAME" \
-                    --resource-group "$RG" \
-                    --revision "$revision"
-            done
-
   switch_traffic:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'switch_traffic' && github.event.inputs.app_name != ''
     runs-on: ubuntu-latest
@@ -213,7 +163,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Promote selected revision to 100% traffic
         shell: bash
         run: |

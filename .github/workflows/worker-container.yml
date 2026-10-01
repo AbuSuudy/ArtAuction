@@ -61,7 +61,6 @@ jobs:
             ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
 
       - name: Deploy worker container
-        if: ${{ matrix.app.containerType == 'worker' }}
         shell: bash
         run: |
             set -euo pipefail

@@ -8,7 +8,7 @@ param appInsightsConnectionString string
 param logAnalyticsWorkspaceResourceId string
 
 module managedEnvironment 'br/public:avm/res/app/managed-environment:0.13.3' = {
-  name: '${environmentName}-${uniqueString(resourceGroup().id, environmentName)}'
+  name: '${environmentName}-${uniqueString(deployment().name)}'
   params: {
     name: environmentName
     zoneRedundant: false

@@ -5,7 +5,7 @@ param appInsightsName string
 param workspaceResourceId string
 
 module appInsight 'br/public:avm/res/insights/component:0.7.2' = {
-  name: '${appInsightsName}-${uniqueString(resourceGroup().id, appInsightsName)}'
+  name: '${appInsightsName}-${uniqueString(deployment().name)}'
   params: {
     name: appInsightsName
     workspaceResourceId: workspaceResourceId

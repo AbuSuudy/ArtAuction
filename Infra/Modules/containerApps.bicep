@@ -26,7 +26,7 @@ param minReplicas int
 param maxReplicas int
 
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
-  name: '${containerAppsName}-${uniqueString(resourceGroup().id, containerAppsName)}'
+  name: '${containerAppsName}-${uniqueString(deployment().name)}'
   params: {
     name: containerAppsName
     managedIdentities: {
@@ -66,7 +66,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
 
 //ACR pull role assignment from container registry
 module iams 'roleAssignments.bicep' = {
-  name: '${containerAppsName}-Role-${uniqueString(resourceGroup().id, containerAppsName)}'
+  name: '${containerAppsName}-Role-${uniqueString(deployment().name)}'
   params: {
     principalId: containerApp.outputs.systemAssignedMIPrincipalId
     roleDefinitionId: '7f951dda-4ed3-4680-a7ca-43fe172d538d'

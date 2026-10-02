@@ -3,6 +3,7 @@ name: API Container Pipeline
 on:
   workflow_dispatch:
     inputs:
+
       action:
         description: "Manage container traffic"
         required: true
@@ -10,6 +11,7 @@ on:
         options:
           - build_and_deploy_container
           - switch_traffic
+
       app_name:
         description: "Container app to update"
         required: false
@@ -19,11 +21,12 @@ on:
           - ""
           - art-auction-api
 
-      revision_name:
+      revision_name: 
         description: "Revision to send 100% traffic to"
         required: false
         default: ""
         type: string
+        
   push:
     branches:
       - main

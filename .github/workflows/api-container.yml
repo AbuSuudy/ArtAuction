@@ -156,7 +156,7 @@ jobs:
             done
 
   switch_traffic:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'switch_traffic' && github.event.inputs.app_name != ''
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'switch_traffic' && github.event.inputs.app_name != '' && github.event.inputs.revision_name != ''
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Azure

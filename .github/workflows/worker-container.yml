@@ -18,6 +18,11 @@ on:
         options:
           - ""
           - art-auction-consumer
+      revision_name:
+        description: "Revision to activate"
+        required: false
+        default: ""
+        type: string
 
   push:
     branches:
@@ -102,7 +107,7 @@ jobs:
             done
 
   change_active_revision:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'change_active_revision' && github.event.inputs.app_name != ''
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'change_active_revision' && github.event.inputs.app_name != '' && github.event.inputs.revision_name != ''
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Azure

@@ -42,7 +42,7 @@ resource inboundSameSubscriptionRule 'Microsoft.Network/networkSecurityPerimeter
   }
 }
 
-resource associations 'Microsoft.Network/networkSecurityPerimeters/resourceAssociations@2024-07-01' = [
+resource associations 'Microsoft.Network/networkSecurityPerimeters/resourceAssociations@2025-09-01' = [
   for resource in associatedResources: {
     parent: nsp
     name: '${resource.name}-association'

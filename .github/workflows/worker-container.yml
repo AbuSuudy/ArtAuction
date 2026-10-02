@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - build_and_deploy_container
+          - change_active_revision
       app_name:
         description: "Container app to update"
         required: false
@@ -99,3 +100,25 @@ jobs:
                     --resource-group "$RG" \
                     --revision "$revision"
             done
+
+  change_active_revision:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'change_active_revision' && github.event.inputs.app_name != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Update revison only single revision should be active
+        shell: bash
+        run: |
+            set -euo pipefail
+
+            APP_NAME="${{ github.event.inputs.app_name }}"
+            REVISION_NAME="${{ github.event.inputs.revision_name }}"
+            RG="${{ vars.RESOURCE_GROUP }}"
+
+            az containerapp revision activate \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --revision "$REVISION_NAME"

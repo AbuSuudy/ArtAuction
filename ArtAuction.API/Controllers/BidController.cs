@@ -27,7 +27,6 @@ namespace ArtAuction.API.Controllers
             }
         ];
 
-
         [HttpPost("SubmitBid")]
         public async Task<IActionResult> SubmitBid(int id, decimal bid)
         {

@@ -1,10 +1,13 @@
 using ArtAuction.API;
 using ArtAuction.API.Endpoints;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,7 +37,13 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-builder.Services.AddApplicationInsightsTelemetry();
+builder.Services.AddOpenTelemetry()
+    .UseAzureMonitor(options =>
+    {
+        options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+    })
+    .WithTracing(tracing => tracing.AddSource("MassTransit"))
+    .WithMetrics(metrics => metrics.AddMeter("MassTransit"));
 
 var app = builder.Build();
 

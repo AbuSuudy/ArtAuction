@@ -41,6 +41,10 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
               name: 'ApplicationInsights__ConnectionString'
               value: appInsightsConnectionString
             }
+            {
+              name: 'OTEL_SERVICE_NAME'
+              value: app.name
+            }
           ]
         }
       ]

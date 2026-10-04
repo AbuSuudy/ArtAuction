@@ -2,7 +2,10 @@ using ArtAuction.Consumer;
 using ArtAuction.Consumer.Activities;
 using Azure.Data.Tables;
 using Azure.Identity;
+using Azure.Monitor.OpenTelemetry.Exporter;
 using MassTransit;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
@@ -36,7 +39,13 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-builder.Services.AddApplicationInsightsTelemetry();
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddSource("MassTransit"))
+    .WithMetrics(metrics => metrics.AddMeter("MassTransit"))
+    .UseAzureMonitorExporter(options =>
+    {
+        options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+    });
 
 var host = builder.Build();
 host.Run();

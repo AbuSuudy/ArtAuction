@@ -3,7 +3,8 @@
     "ArtAuction.Consumer": {
       "commandName": "Project",
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "DOTNET_ENVIRONMENT": "Development",
+        "OTEL_SERVICE_NAME": "art-auction-consumer"
       },
       "dotnetRunMessages": true
     },

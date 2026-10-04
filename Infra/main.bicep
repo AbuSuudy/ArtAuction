@@ -1,4 +1,4 @@
-//az deployment sub create --name ExampleDeployment --location uksouth --template-file Infra\main.bicep --parameters Infra\Params\main.bicepparam
+//az deployment sub create --name ExampleDeployment --location northeurope --template-file Infra\main.bicep --parameters Infra\Params\main.bicepparam
 import { containerAppConfig, nspResourceAccess } from 'Types/types.bicep'
 
 targetScope = 'subscription'

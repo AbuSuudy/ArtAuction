@@ -1,4 +1,5 @@
 //az deployment sub create --name ExampleDeployment --location uksouth --template-file Infra\main.bicep --parameters Infra\Params\main.bicepparam
+import { containerAppConfig, nspResourceAccess } from 'Types/types.bicep'
 
 targetScope = 'subscription'
 
@@ -29,6 +30,12 @@ param keyVaultName string
 @description('Network Security Perimeter Name')
 param nspName string
 
+@description('Container Apps to deploy')
+param containerApps containerAppConfig[]
+
+@description('Resources to associate with the Network Security Perimeter')
+param nspAssociatedResources nspResourceAccess[]
+
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: resourceGroupName
   location: 'NorthEurope'
@@ -46,5 +53,7 @@ module resources 'resources.bicep' = {
     storageAccountName: storageAccountName
     keyVaultName: keyVaultName
     nspName: nspName
+    containerApps: containerApps
+    nspAssociatedResources: nspAssociatedResources
   }
 }

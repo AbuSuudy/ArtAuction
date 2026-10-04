@@ -1,9 +1,4 @@
 <Solution>
-  <Folder Name="/GitHub Actions/">
-    <File Path=".github/workflows/api-container.yml" />
-    <File Path=".github/workflows/infra.yml" />
-    <File Path=".github/workflows/worker-container.yml" />
-  </Folder>
   <Folder Name="/Infra/">
     <File Path="Infra/main.bicep" />
     <File Path="Infra/Resources.bicep" />
@@ -16,6 +11,7 @@
     <File Path="Infra/Modules/keyVault.bicep" />
     <File Path="Infra/Modules/logAnalytics.bicep" />
     <File Path="Infra/Modules/networkSecurityPerimeter.bicep" />
+    <File Path="Infra/Modules/nspDiagnostics.bicep" />
     <File Path="Infra/Modules/roleAssignments.bicep" />
     <File Path="Infra/Modules/serviceBus.bicep" />
     <File Path="Infra/Modules/storageAccount.bicep" />
@@ -23,7 +19,10 @@
   <Folder Name="/Infra/Params/">
     <File Path="Infra/Params/main.bicepparam" />
   </Folder>
+  <Folder Name="/Infra/Types/">
+    <File Path="Infra/Types/types.bicep" />
+  </Folder>
   <Project Path="ArtAuction.API/ArtAuction.API.csproj" />
-  <Project Path="ArtAuction.Consumer/ArtAuction.Consumer.csproj" Id="7a52ef6b-431d-4adb-8e79-eb177923e649" />
+  <Project Path="ArtAuction.Consumer/ArtAuction.Consumer.csproj" />
   <Project Path="ArtAuction.Contract/ArtAuction.Contract.csproj" />
 </Solution>

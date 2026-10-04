@@ -1,5 +1,7 @@
-@description('Container App Name')
-param containerAppsName string
+import { containerAppConfig } from '../Types/types.bicep'
+
+@description('Container Apps to deploy')
+param containerApps containerAppConfig[]
 
 @description('Environment resouce environment')
 param environmentResourceId string
@@ -13,65 +15,60 @@ param containerRegsistryResourceId string
 @description('App Insights Connection String')
 param appInsightsConnectionString string
 
-@description('Whether to disable all ingress traffic for this container app (e.g. worker services with no HTTP endpoint)')
-param disableIngress bool = false
-
-@description('Multiple or Single')
-param activeRevisionsMode string
-
-@description('Minimum number of replicas')
-param minReplicas int
-
-@description('Maximum number of replicas')
-param maxReplicas int
-
-module containerApp 'br/public:avm/res/app/container-app:0.23.0' = {
-  name: '${containerAppsName}-${uniqueString(deployment().name)}'
-  params: {
-    name: containerAppsName
-    managedIdentities: {
-      systemAssigned: true
-    }
-    diagnosticSettings: [
-      {
-        workspaceResourceId: workspaceResourceId
+module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
+  for app in containerApps: {
+    name: '${app.name}-${uniqueString(deployment().name)}'
+    params: {
+      name: app.name
+      managedIdentities: {
+        systemAssigned: true
       }
-    ]
-    containers: [
-      {
-        image: 'mcr.microsoft.com/k8se/quickstart:latest'
-        name: containerAppsName
-        resources: {
-          cpu: 1
-          memory: '2.0Gi'
+      diagnosticSettings: [
+        {
+          workspaceResourceId: workspaceResourceId
         }
-        env: [
-          {
-            name: 'ApplicationInsights__ConnectionString'
-            value: appInsightsConnectionString
+      ]
+      containers: [
+        {
+          image: 'mcr.microsoft.com/k8se/quickstart:latest'
+          name: app.name
+          resources: {
+            cpu: 1
+            memory: '2.0Gi'
           }
-        ]
+          env: [
+            {
+              name: 'ApplicationInsights__ConnectionString'
+              value: appInsightsConnectionString
+            }
+          ]
+        }
+      ]
+      ingressTargetPort: app.disableIngress ? null : 8080
+      disableIngress: app.disableIngress
+      activeRevisionsMode: app.activeRevisionsMode
+      environmentResourceId: environmentResourceId
+      scaleSettings: {
+          minReplicas: app.minReplicas
+          maxReplicas: app.maxReplicas
       }
-    ]
-    ingressTargetPort: disableIngress ? null : 8080
-    disableIngress: disableIngress
-    activeRevisionsMode: activeRevisionsMode
-    environmentResourceId: environmentResourceId
-    scaleSettings: {
-        minReplicas: minReplicas
-        maxReplicas: maxReplicas
     }
   }
-}
+]
 
 //ACR pull role assignment from container registry
-module iams 'roleAssignments.bicep' = {
-  name: '${containerAppsName}-Role-${uniqueString(deployment().name)}'
-  params: {
-    principalId: containerApp.outputs.systemAssignedMIPrincipalId
-    roleDefinitionId: '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-    scopeResourceId: containerRegsistryResourceId
+module iams 'roleAssignments.bicep' = [
+  for (app, i) in containerApps: {
+    name: '${app.name}-Role-${uniqueString(deployment().name)}'
+    params: {
+      principalId: containerApp[i].outputs.systemAssignedMIPrincipalId
+      roleDefinitionId: '7f951dda-4ed3-4680-a7ca-43fe172d538d'
+      scopeResourceId: containerRegsistryResourceId
+    }
   }
-}
+]
 
-output systemAssignedMIPrincipalId string = containerApp.outputs.systemAssignedMIPrincipalId
+@description('System assigned managed identity principal ids, in the same order as containerApps')
+output systemAssignedMIPrincipalIds string[] = [
+  for (app, i) in containerApps: containerApp[i].outputs.systemAssignedMIPrincipalId
+]

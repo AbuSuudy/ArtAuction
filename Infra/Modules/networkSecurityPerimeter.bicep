@@ -1,3 +1,5 @@
+import { nspResourceAccess } from '../Types/types.bicep'
+
 @description('Network Security Perimeter Name')
 param nspName string
 
@@ -5,7 +7,7 @@ param nspName string
 param profileName string = 'default'
 
 @description('Resources to associate with the perimeter profile, each with its own access mode (Learning | Enforced | Audit)')
-param associatedResources array
+param associatedResources nspResourceAccess[]
 
 @description('Log Analytics Workspace name to send NSP access logs to')
 param logAnalyticsWorkspaceName string
@@ -48,7 +50,7 @@ resource associations 'Microsoft.Network/networkSecurityPerimeters/resourceAssoc
     name: '${resource.name}-association'
     properties: {
       privateLinkResource: {
-        id: resource.resourceId
+        id: resourceId(resource.resourceType, resource.name)
       }
       profile: {
         id: profile.id
@@ -58,13 +60,29 @@ resource associations 'Microsoft.Network/networkSecurityPerimeters/resourceAssoc
   }
 ]
 
-module diagnostics 'nspDiagnostics.bicep' = {
-  name: '${nspName}-diagnostics'
-  params: {
-    nspName: nsp.name
-    logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
-    logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId
-    nspAccessLogsRetentionInDays: nspAccessLogsRetentionInDays
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: nsp
+  name: 'nsp-diagnostics'
+  properties: {
+    workspaceId: logAnalyticsWorkspaceResourceId
+    logs: [
+      {
+        categoryGroup: 'allLogs'
+        enabled: true
+      }
+    ]
+  }
+}
+
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
+  name: logAnalyticsWorkspaceName
+}
+
+resource nspAccessLogsRetention 'Microsoft.OperationalInsights/workspaces/tables@2023-09-01' = {
+  parent: logAnalyticsWorkspace
+  name: 'NSPAccessLogs'
+  properties: {
+    retentionInDays: nspAccessLogsRetentionInDays
   }
 }
 

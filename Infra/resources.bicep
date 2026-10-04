@@ -1,3 +1,5 @@
+import { containerAppConfig, nspResourceAccess } from 'Types/types.bicep'
+
 @description('Log Analytics Workspace Name')
 param logAnalyticsName string
 
@@ -21,6 +23,12 @@ param keyVaultName string
 
 @description('Network Security Perimeter Name')
 param nspName string
+
+@description('Container Apps to deploy')
+param containerApps containerAppConfig[]
+
+@description('Resources to associate with the Network Security Perimeter')
+param nspAssociatedResources nspResourceAccess[]
 
 module keyVault 'Modules/keyVault.bicep' = {
   name: keyVaultName
@@ -60,34 +68,22 @@ module containerEnvironment 'Modules/containerEnvironment.bicep' = {
   }
 }
 
-var containerApps = [
-  { name: 'art-auction-api', disableIngress: false, activeRevisionsMode: 'Multiple', minReplicas: 1, maxReplicas: 3 }
-  { name: 'art-auction-consumer', disableIngress: true, activeRevisionsMode: 'Single', minReplicas: 1, maxReplicas: 1 }
-]
-
-module container 'Modules/containerApps.bicep' = [
-  for (containerApp, i) in containerApps: {
-    name: 'container-${containerApp.name}'
-    params: {
-      containerAppsName: containerApp.name
-      containerRegsistryResourceId: containerRegistry.outputs.containerRegistryResourceId
-      workspaceResourceId: logAnalytics.outputs.resourceId
-      environmentResourceId: containerEnvironment.outputs.resourceId
-      appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
-      disableIngress: containerApp.disableIngress
-      activeRevisionsMode : containerApp.activeRevisionsMode
-      minReplicas: containerApp.minReplicas
-      maxReplicas: containerApp.maxReplicas
-    }
+module container 'Modules/containerApps.bicep' = {
+  name: 'container-apps'
+  params: {
+    containerApps: containerApps
+    containerRegsistryResourceId: containerRegistry.outputs.containerRegistryResourceId
+    workspaceResourceId: logAnalytics.outputs.resourceId
+    environmentResourceId: containerEnvironment.outputs.resourceId
+    appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
   }
-]
+}
 
-var identites = map(container, c => c.outputs.systemAssignedMIPrincipalId)
 module serviceBus 'Modules/serviceBus.bicep' = {
   name: serviceBusName
   params: {
     serviceBusName: serviceBusName
-    identites: identites
+    identites: container.outputs.systemAssignedMIPrincipalIds
   }
 }
 
@@ -97,22 +93,21 @@ module storageAccount 'Modules/storageAccount.bicep' = {
   name: storageAccountName
   params: {
     storageAccountName: storageAccountName
-    containerIdentity: container[apiAppIndex].outputs.systemAssignedMIPrincipalId
+    containerIdentity: container.outputs.systemAssignedMIPrincipalIds[apiAppIndex]
   }
 }
 
-//External container apps need to talk to log analytics works space to needs to be more lenient on the access mode workspace.
 module networkSecurityPerimeter 'Modules/networkSecurityPerimeter.bicep' = {
   name: nspName
   params: {
     nspName: nspName
-    associatedResources: [
-      { name: keyVaultName, resourceId: keyVault.outputs.resourceId, accessMode: 'Enforced' }
-      { name: serviceBusName, resourceId: serviceBus.outputs.resourceId, accessMode: 'Enforced' }
-      { name: logAnalyticsName, resourceId: logAnalytics.outputs.resourceId, accessMode: 'Learning' }
-      { name: storageAccountName, resourceId: storageAccount.outputs.resourceId, accessMode: 'Enforced' }
-    ]
+    associatedResources: nspAssociatedResources
     logAnalyticsWorkspaceName: logAnalyticsName
     logAnalyticsWorkspaceResourceId: logAnalytics.outputs.resourceId
   }
+  dependsOn: [
+    keyVault
+    serviceBus
+    storageAccount
+  ]
 }

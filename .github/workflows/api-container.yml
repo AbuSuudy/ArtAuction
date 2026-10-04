@@ -19,7 +19,7 @@ on:
         type: choice
         options:
           - ""
-          - art-auction-api
+          - CA-ARTAUCTIONAPI-NEU-001
 
       revision_name: 
         description: "Revision to send 100% traffic to"
@@ -43,8 +43,8 @@ jobs:
       matrix:
         app:
           - dockerfile: ArtAuction.API/Dockerfile
-            containerAppName: art-auction-api
-            imageName: art-auction-api
+            containerAppName: CA-ARTAUCTIONAPI-NEU-001
+            imageName: CA-ARTAUCTIONAPI-NEU-001
 
     steps:
       - uses: actions/checkout@v3

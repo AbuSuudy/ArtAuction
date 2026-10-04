@@ -4,7 +4,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "OTEL_SERVICE_NAME": "art-auction-api"
+        "OTEL_SERVICE_NAME": "CA-ARTAUCTIONAPI-NEU-001"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5295"
@@ -15,7 +15,7 @@
       "launchUrl": "scalar",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "OTEL_SERVICE_NAME": "art-auction-api"
+        "OTEL_SERVICE_NAME": "CA-ARTAUCTIONAPI-NEU-001"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7279/;http://localhost:5295"

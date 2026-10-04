@@ -11,8 +11,8 @@ param keyVaultName = 'KV-ARTAUCTION-NEU-001'
 param nspName = 'NSP-ARTAUCTION-NEU-001'
 
 param containerApps = [
-  { name: 'art-auction-api', disableIngress: false, activeRevisionsMode: 'Multiple', minReplicas: 1, maxReplicas: 3 }
-  { name: 'art-auction-consumer', disableIngress: true, activeRevisionsMode: 'Single', minReplicas: 1, maxReplicas: 1 }
+  { name: 'CA-ARTAUCTIONAPI-NEU-001', disableIngress: false, activeRevisionsMode: 'Multiple', minReplicas: 1, maxReplicas: 3 }
+  { name: 'CA-ARTAUCTIONCONSUMER-NEU-001', disableIngress: true, activeRevisionsMode: 'Single', minReplicas: 1, maxReplicas: 1 }
 ]
 
 //External container apps need to talk to the log analytics workspace so it needs a more lenient access mode.

@@ -19,7 +19,7 @@ on:
         type: choice
         options:
           - ""
-          - art-auction-consumer
+          - CA-ARTAUCTIONCONSUMER-NEU-001
 
       revision_name:
         description: "Revision to activate"
@@ -43,8 +43,8 @@ jobs:
       matrix:
         app:
           - dockerfile: ArtAuction.Consumer/Dockerfile
-            containerAppName: art-auction-consumer
-            imageName: art-auction-consumer
+            containerAppName: CA-ARTAUCTIONCONSUMER-NEU-001
+            imageName: CA-ARTAUCTIONCONSUMER-NEU-001
 
     steps:
       - uses: actions/checkout@v3

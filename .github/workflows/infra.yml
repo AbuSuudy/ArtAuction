@@ -56,6 +56,6 @@ jobs:
         run: |
           az containerapp registry set \
             --name ${{ matrix.containerapp }} \
-            --resource-group MassTransit-Playground \
-            --server masstransitcontainerregistry.azurecr.io \
+            --resource-group RG-ARTAUCTION-NEU-001 \
+            --server crartauctionneu001.azurecr.io \
             --identity system

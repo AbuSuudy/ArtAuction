@@ -11,8 +11,29 @@ param keyVaultName = 'KV-ARTAUCTION-NEU-001'
 param nspName = 'NSP-ARTAUCTION-NEU-001'
 
 param containerApps = [
-  { name: 'ca-artauctionapi-neu-001', disableIngress: false, activeRevisionsMode: 'Multiple', minReplicas: 1, maxReplicas: 3 }
-  { name: 'ca-artauctionconsumer-neu-001', disableIngress: true, activeRevisionsMode: 'Single', minReplicas: 1, maxReplicas: 1 }
+  {
+    name: 'ca-artauctionapi-neu-001'
+    disableIngress: false
+    activeRevisionsMode: 'Multiple'
+    minReplicas: 1
+    maxReplicas: 3
+    env: [
+      { name: 'OTEL_SERVICE_NAME', value: 'ca-artauctionapi-neu-001' }
+      { name: 'ServiceBus__Host', value: 'sb://${serviceBusName}.servicebus.windows.net' }
+    ]
+  }
+  {
+    name: 'ca-artauctionconsumer-neu-001'
+    disableIngress: true
+    activeRevisionsMode: 'Single'
+    minReplicas: 1
+    maxReplicas: 1
+    env: [
+      { name: 'OTEL_SERVICE_NAME', value: 'ca-artauctionconsumer-neu-001' }
+      { name: 'ServiceBus__Host', value: 'sb://${serviceBusName}.servicebus.windows.net' }
+      { name: 'StorageAccount__TableUri', value: 'https://${storageAccountName}.table.core.windows.net' }
+    ]
+  }
 ]
 
 //External container apps need to talk to the log analytics workspace so it needs a more lenient access mode.

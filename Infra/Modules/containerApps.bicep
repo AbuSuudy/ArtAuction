@@ -15,12 +15,6 @@ param containerRegsistryResourceId string
 @description('App Insights Connection String')
 param appInsightsConnectionString string
 
-@description('Service Bus namespace name')
-param serviceBusName string
-
-@description('Storage Account name')
-param storageAccountName string
-
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
   for app in containerApps: {
     name: '${app.name}-${uniqueString(deployment().name)}'
@@ -42,24 +36,15 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
             cpu: 1
             memory: '2.0Gi'
           }
-          env: [
-            {
-              name: 'ApplicationInsights__ConnectionString'
-              value: appInsightsConnectionString
-            }
-            {
-              name: 'OTEL_SERVICE_NAME'
-              value: app.name
-            }
-            {
-              name: 'ServiceBus__Host'
-              value: 'sb://${serviceBusName}.servicebus.windows.net'
-            }
-            {
-              name: 'StorageAccount__TableUri'
-              value: 'https://${storageAccountName}.table.core.windows.net'
-            }
-          ]
+          env: concat(
+            [
+              {
+                name: 'ApplicationInsights__ConnectionString'
+                value: appInsightsConnectionString
+              }
+            ],
+            app.env
+          )
         }
       ]
       ingressTargetPort: app.disableIngress ? null : 8080

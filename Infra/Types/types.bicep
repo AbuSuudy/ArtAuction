@@ -1,10 +1,18 @@
 @export()
+type containerAppEnvVar = {
+  name: string
+  value: string
+}
+
+@export()
 type containerAppConfig = {
   name: string
   disableIngress: bool
   activeRevisionsMode: 'Multiple' | 'Single'
   minReplicas: int
   maxReplicas: int
+  @description('Container-specific environment variables, in addition to ApplicationInsights__ConnectionString which is always injected')
+  env: containerAppEnvVar[]
 }
 
 @export()

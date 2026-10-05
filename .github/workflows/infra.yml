@@ -56,6 +56,6 @@ jobs:
         run: |
           az containerapp registry set \
             --name ${{ matrix.containerapp }} \
-            --resource-group  \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
             --server ${{ vars.REGISTRY_LOGIN_SERVER }} \
             --identity system

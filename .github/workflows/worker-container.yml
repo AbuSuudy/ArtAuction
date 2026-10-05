@@ -43,8 +43,8 @@ jobs:
       matrix:
         app:
           - dockerfile: ArtAuction.Consumer/Dockerfile
-            containerAppName: CA-ARTAUCTIONCONSUMER-NEU-001
-            imageName: CA-ARTAUCTIONCONSUMER-NEU-001
+            containerAppName: ca-artauctionconsumer-neu-001
+            imageName: ca-artauctionconsumer-neu-001
 
     steps:
       - uses: actions/checkout@v3

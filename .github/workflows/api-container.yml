@@ -43,8 +43,8 @@ jobs:
       matrix:
         app:
           - dockerfile: ArtAuction.API/Dockerfile
-            containerAppName: CA-ARTAUCTIONAPI-NEU-001
-            imageName: CA-ARTAUCTIONAPI-NEU-001
+            containerAppName: ca-artauctionapi-neu-001
+            imageName: ca-artauctionapi-neu-001
 
     steps:
       - uses: actions/checkout@v3

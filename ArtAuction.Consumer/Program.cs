@@ -13,7 +13,7 @@ builder.Services.AddHostedService<Worker>();
 builder.Services.AddSingleton<TableServiceClient>(sp =>
 {
     var serviceClient = new TableServiceClient(
-        new Uri("https://stmasstransit001.table.core.windows.net"),
+        new Uri(builder.Configuration["StorageAccount:TableUri"]!),
         new DefaultAzureCredential());
 
     serviceClient.CreateTableIfNotExists("BidCompensation");

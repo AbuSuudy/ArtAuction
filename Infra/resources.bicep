@@ -77,6 +77,7 @@ module container 'Modules/containerApps.bicep' = {
     environmentResourceId: containerEnvironment.outputs.resourceId
     appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
     serviceBusName: serviceBusName
+    storageAccountName: storageAccountName
   }
 }
 

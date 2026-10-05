@@ -18,6 +18,9 @@ param appInsightsConnectionString string
 @description('Service Bus namespace name')
 param serviceBusName string
 
+@description('Storage Account name')
+param storageAccountName string
+
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
   for app in containerApps: {
     name: '${app.name}-${uniqueString(deployment().name)}'
@@ -51,6 +54,10 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
             {
               name: 'ServiceBus__Host'
               value: 'sb://${serviceBusName}.servicebus.windows.net'
+            }
+            {
+              name: 'StorageAccount__TableUri'
+              value: 'https://${storageAccountName}.table.core.windows.net'
             }
           ]
         }

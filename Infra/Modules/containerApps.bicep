@@ -15,6 +15,9 @@ param containerRegsistryResourceId string
 @description('App Insights Connection String')
 param appInsightsConnectionString string
 
+@description('Service Bus namespace name')
+param serviceBusName string
+
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
   for app in containerApps: {
     name: '${app.name}-${uniqueString(deployment().name)}'
@@ -44,6 +47,10 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
             {
               name: 'OTEL_SERVICE_NAME'
               value: app.name
+            }
+            {
+              name: 'ServiceBus__Host'
+              value: 'sb://${serviceBusName}.servicebus.windows.net'
             }
           ]
         }

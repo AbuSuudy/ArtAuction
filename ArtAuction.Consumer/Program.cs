@@ -33,7 +33,7 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingAzureServiceBus((context, cfg) =>
     {
-        cfg.Host(new Uri("sb://sb-masstransit-neu-002.servicebus.windows.net"));
+        cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!));
 
         cfg.ConfigureEndpoints(context);
     });

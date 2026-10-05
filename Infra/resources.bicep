@@ -76,6 +76,7 @@ module container 'Modules/containerApps.bicep' = {
     workspaceResourceId: logAnalytics.outputs.resourceId
     environmentResourceId: containerEnvironment.outputs.resourceId
     appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
+    serviceBusName: serviceBusName
   }
 }
 

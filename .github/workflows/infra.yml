@@ -43,8 +43,8 @@ jobs:
     strategy:
       matrix:
         containerapp:
-          - CA-ARTAUCTIONAPI-NEU-001
-          - CA-ARTAUCTIONCONSUMER-NEU-001
+          - ca-artauctionapi-neu-001
+          - ca-artauctionconsumer-neu-001
 
     steps:
       - name: Log in to Azure

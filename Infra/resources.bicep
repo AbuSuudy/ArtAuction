@@ -87,7 +87,7 @@ module serviceBus 'Modules/serviceBus.bicep' = {
   }
 }
 
-var apiAppIndex = indexOf(map(containerApps, a => a.name), 'CA-ARTAUCTIONCONSUMER-NEU-001')
+var apiAppIndex = indexOf(map(containerApps, a => a.name), 'ca-artauctionconsumer-neu-001')
 
 module storageAccount 'Modules/storageAccount.bicep' = {
   name: storageAccountName

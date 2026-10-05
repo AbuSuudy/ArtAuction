@@ -19,7 +19,7 @@ on:
         type: choice
         options:
           - ""
-          - CA-ARTAUCTIONAPI-NEU-001
+          - ca-artauctionapi-neu-001
 
       revision_name: 
         description: "Revision to send 100% traffic to"

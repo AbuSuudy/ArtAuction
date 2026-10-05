@@ -4,7 +4,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
-        "OTEL_SERVICE_NAME": "CA-ARTAUCTIONCONSUMER-NEU-001"
+        "OTEL_SERVICE_NAME": "ca-artauctionconsumer-neu-001"
       },
       "dotnetRunMessages": true
     },

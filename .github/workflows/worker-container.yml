@@ -19,8 +19,8 @@ on:
         type: choice
         options:
           - ""
-          - CA-ARTAUCTIONCONSUMER-NEU-001
-
+          - ca-artauctionconsumer-neu-001
+          
       revision_name:
         description: "Revision to activate"
         required: false

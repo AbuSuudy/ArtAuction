@@ -18,16 +18,13 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.32.1' = {
     managedIdentities: {
       systemAssigned: true
     }
-  }
-}
-
-//Storage Table Data Contributor
-resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: storageAccount
-  name: guid(scopeResourceId, principalId, roleDefinitionId)
-  properties: {
-    principalId: principalId
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions',  '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3')
+    //Storage Table Data Contributor
+    roleAssignments: [
+      {
+        principalId: containerIdentity
+        roleDefinitionIdOrName: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+      }
+    ]
   }
 }
 

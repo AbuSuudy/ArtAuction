@@ -55,13 +55,6 @@ module appInsights 'Modules/appInsight.bicep' = {
   }
 }
 
-module containerRegistry 'Modules/containerRegistry.bicep' = {
-  name: acrName
-  params: {
-    acrName: acrName
-  }
-}
-
 module containerEnvironment 'Modules/containerEnvironment.bicep' = {
   name: environmentName
   params: {
@@ -75,11 +68,18 @@ module container 'Modules/containerApps.bicep' = {
   name: 'container-apps'
   params: {
     containerApps: containerApps
-    containerRegsistryResourceId: containerRegistry.outputs.containerRegistryResourceId
     workspaceResourceId: logAnalytics.outputs.resourceId
     environmentResourceId: containerEnvironment.outputs.resourceId
     appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
     imageOverrides: imageOverrides
+  }
+}
+
+module containerRegistry 'Modules/containerRegistry.bicep' = {
+  name: acrName
+  params: {
+    acrName: acrName
+    identites: container.outputs.systemAssignedMIPrincipalIds
   }
 }
 

@@ -15,6 +15,11 @@ param containerRegsistryResourceId string
 @description('App Insights Connection String')
 param appInsightsConnectionString string
 
+@description('Map of container app name to the image it is currently running. Apps missing from this map (e.g. on first deploy) fall back to the placeholder image.')
+param imageOverrides object = {}
+
+var placeholderImage = 'mcr.microsoft.com/k8se/quickstart:latest'
+
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
   for app in containerApps: {
     name: '${app.name}-${uniqueString(deployment().name)}'
@@ -30,7 +35,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
       ]
       containers: [
         {
-          image: 'mcr.microsoft.com/k8se/quickstart:latest'
+          image: contains(imageOverrides, app.name) ? imageOverrides[app.name] : placeholderImage
           name: app.name
           resources: {
             cpu: 1

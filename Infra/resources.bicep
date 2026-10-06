@@ -30,6 +30,9 @@ param containerApps containerAppConfig[]
 @description('Resources to associate with the Network Security Perimeter')
 param nspAssociatedResources nspResourceAccess[]
 
+@description('Map of container app name to the image it is currently running, so an infra-only deploy does not reset it to the placeholder image')
+param imageOverrides object = {}
+
 module keyVault 'Modules/keyVault.bicep' = {
   name: keyVaultName
   params: {
@@ -76,6 +79,7 @@ module container 'Modules/containerApps.bicep' = {
     workspaceResourceId: logAnalytics.outputs.resourceId
     environmentResourceId: containerEnvironment.outputs.resourceId
     appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
+    imageOverrides: imageOverrides
   }
 }
 

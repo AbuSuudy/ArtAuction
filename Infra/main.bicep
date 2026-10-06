@@ -36,6 +36,9 @@ param containerApps containerAppConfig[]
 @description('Resources to associate with the Network Security Perimeter')
 param nspAssociatedResources nspResourceAccess[]
 
+@description('Map of container app name to the image it is currently running, so an infra-only deploy does not reset it to the placeholder image')
+param imageOverrides object = {}
+
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: resourceGroupName
   location: 'NorthEurope'
@@ -55,5 +58,6 @@ module resources 'resources.bicep' = {
     nspName: nspName
     containerApps: containerApps
     nspAssociatedResources: nspAssociatedResources
+    imageOverrides: imageOverrides
   }
 }

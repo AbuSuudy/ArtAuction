@@ -21,7 +21,7 @@
   <Folder Name="/Infra/Types/">
     <File Path="Infra/Types/types.bicep" />
   </Folder>
-  <Project Path="ArtAuction.API/ArtAuction.API.csproj" />
-  <Project Path="ArtAuction.Consumer/ArtAuction.Consumer.csproj" />
-  <Project Path="ArtAuction.Contract/ArtAuction.Contract.csproj" />
+  <Project Path="../../../../../../source/repos/ArtAuction/ArtAuction.API/ArtAuction.API.csproj" />
+  <Project Path="../../../../../../source/repos/ArtAuction/ArtAuction.Consumer/ArtAuction.Consumer.csproj" />
+  <Project Path="../../../../../../source/repos/ArtAuction/ArtAuction.Contract/ArtAuction.Contract.csproj" />
 </Solution>

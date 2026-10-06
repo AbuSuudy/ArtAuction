@@ -22,12 +22,12 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.32.1' = {
 }
 
 //Storage Table Data Contributor
-module iams 'roleAssignments.bicep' = {
-  name: '${storageAccountName}-Role-${uniqueString(deployment().name)}'
-  params: {
-    principalId: containerIdentity
-    roleDefinitionId: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
-    scopeResourceId: storageAccount.outputs.resourceId
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: storageAccount
+  name: guid(scopeResourceId, principalId, roleDefinitionId)
+  properties: {
+    principalId: principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions',  '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3')
   }
 }
 

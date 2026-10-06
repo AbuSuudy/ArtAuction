@@ -50,7 +50,7 @@ namespace ArtAuction.Consumer.Activities
                 TableUpdateMode.Replace);
 
 
-            return context.Completed<AquiredLog>(new
+            return context.Completed<BidRejectedLog>(new
             {
                 ArtWorkBid = new ArtWorkBid
                 {

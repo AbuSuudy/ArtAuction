@@ -17,15 +17,15 @@ module servicebus 'br/public:avm/res/service-bus/namespace:0.16.2' = {
 }
 
 //Azure Service Bus Data Owner
-module iams 'roleAssignments.bicep' = [
-  for (identity, i) in identites: {
-    name: '${serviceBusName}-Role-${uniqueString(identity)}'
-    params: {
-      principalId: identity
-      roleDefinitionId: '090c5cfd-751d-490a-894a-3ce6f1109419'
-      scopeResourceId: servicebus.outputs.resourceId
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+    for (identity, i) in identites: {
+        scope: servicebus
+        name: guid(scopeResourceId, principalId, roleDefinitionId)
+        properties: {
+          principalId: identity
+          roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '090c5cfd-751d-490a-894a-3ce6f1109419')
+        }
     }
-  }
-]
+}
 
 output resourceId string = servicebus.outputs.resourceId

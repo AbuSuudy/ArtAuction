@@ -51,7 +51,7 @@ namespace ArtAuction.Consumer.Activities
                 response.Value.ETag,
                 TableUpdateMode.Replace);
 
-            return context.Completed<AquiredLog>(new
+            return context.Completed<BidAcceptedLog>(new
             {
                 ArtWorkBid = new ArtWorkBid
                 {

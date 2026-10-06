@@ -13,39 +13,39 @@ A review of the full solution: API, Consumer, Contract, Bicep and GitHub workflo
 
 ## Phase 1: Bugs That Are Breaking Things Now
 
-- [ ] **The code points at different Azure resources than the Bicep creates.** The code connects to Service Bus `sb-masstransit-neu-002` and storage `stmasstransit001`. The Bicep deploys `SBN-ARTAUCTION-NEU-001` and `startauctionneu001`.
+- [x] **The code points at different Azure resources than the Bicep creates.** ~Fixed: both addresses now come from config (`ServiceBus:Host`, `StorageAccount:TableUri`) and the configured values match the Bicep-created resource names.
   - Where: `ArtAuction.API/Program.cs:34`, `ArtAuction.Consumer/Program.cs:16,36`
   - Fix: move both addresses into config (`ServiceBus:Namespace`, `Storage:TableUri`) and have Bicep set them as container env vars from module outputs.
 
-- [ ] **Every infra deploy resets the apps to the placeholder image.** The Container App module always sets `mcr.microsoft.com/k8se/quickstart:latest`, so each run of `infra.yml` creates a new revision without the real app image.
+- [x] **Every infra deploy resets the apps to the placeholder image.** ~Fixed: `containerApps.bicep` takes an `imageOverrides` param, and `infra.yml` resolves the currently-running image before deploying and passes it back in.
   - Where: `Infra/Modules/containerApps.bicep:33`
   - Fix: add an `image` parameter per app (default to the quickstart image only on first deploy), or look up the current image and pass it back in.
 
-- [ ] **The infra workflow passes an empty `--resource-group`**, so `az containerapp registry set` fails.
+- [x] **The infra workflow passes an empty `--resource-group`**, ~Fixed: now uses `${{ vars.RESOURCE_GROUP }}`.
   - Where: `.github/workflows/infra.yml:59`
   - Fix: use `${{ vars.RESOURCE_GROUP }}`, or better, set the registry identity in Bicep and delete this job.
 
-- [ ] **Bids lose their pence when saved.** `(long)Bid * 100` casts to `long` before multiplying, so 1234.56 becomes 123400.
+- [x] **Bids lose their pence when saved.** ~Fixed: all four sites now cast as `(long)(Bid * 100)`.
   - Where: `ArtAuction.Consumer/ArtWorkBidConsumer.cs:20` and all three activities' `Compensate` methods
   - Fix: `(long)(Bid * 100)`, or just store `decimal`/`double`.
 
-- [ ] **The error handler never catches endpoint errors.** It's registered after `MapBidEndpoints`. It also returns `exception.Message` to the caller, passes the logger arguments in the wrong order, and can hit a null `exception`.
-  - Where: `ArtAuction.API/Program.cs:66-89`
-  - Fix: use `AddProblemDetails()` + `UseExceptionHandler()` at the top of the pipeline. Only show the exception detail in Development.
+- [ ] **The error handler never catches endpoint errors.** ~Mostly fixed: `UseExceptionHandler` is now registered right after `app.Build()`, before `MapBidEndpoints`; `LogError` arguments are in the right order (`logger.LogError(exception, exception?.Message)`); and `Detail = exception?.Message` (line 71) is now null-safe. Still open: the computed `dev` flag is never used to gate what's returned, so exception text still goes to callers in every environment, including Production.
+  - Where: `ArtAuction.API/Program.cs:52-75`
+  - Fix: only include `Detail` when `dev` is true.
 
-- [ ] **The worker's revision cleanup does nothing.** It picks revisions that are already inactive and then deactivates them.
+- [ ] **The worker's revision cleanup does nothing.** Still picks revisions that are already inactive (`select(.properties.active == false)`) and then deactivates them — a no-op.
   - Where: `.github/workflows/worker-container.yml:97`
   - Fix: filter on `active == true` and skip the latest revision. With `Single` mode the platform already does this, so the step can probably go.
 
-- [ ] **Role assignments are applied to the whole resource group, not the resource.** `roleAssignments.bicep` uses `scope: resourceGroup()`, so both apps get *Service Bus Data Owner* (and the consumer gets *Storage Table Data Contributor*) across the entire RG.
+- [x] **Role assignments are applied to the whole resource group, not the resource.** ~Fixed: `roleAssignments.bicep` is gone; `serviceBus.bicep` and `storageAccount.bicep` now use the AVM modules' resource-scoped `roleAssignments` param.
   - Where: `Infra/Modules/roleAssignments.bicep:5`
   - Fix: use an `existing` resource reference as the scope, or the AVM modules' built-in `roleAssignments` parameter.
 
-- [ ] **Accepted and Rejected activities return the wrong log type.** They call `context.Completed<AquiredLog>` (copy-paste). It works only because the property names happen to match.
+- [x] **Accepted and Rejected activities return the wrong log type.** ~Fixed: both now correctly call `context.Completed<BidAcceptedLog>` / `context.Completed<BidRejectedLog>`.
   - Where: `ArtAuction.Consumer/Activities/BidAcceptedActivity.cs:54`, `ArtAuction.Consumer/Activities/BidRejectedActivity.cs:53`
   - Fix: return `BidAcceptedLog` / `BidRejectedLog`.
 
-- [ ] **The solution file has the wrong case for `Resources.bicep`.** The file on disk is `resources.bicep`, which breaks on case-sensitive file systems.
+- [x] **The solution file has the wrong case for `Resources.bicep`.** ~Fixed: `ArtAuction.slnx` now references `Infra/resources.bicep` (lowercase), matching the file on disk.
   - Where: `ArtAuction.slnx:4`
   - Fix: correct the casing.
 

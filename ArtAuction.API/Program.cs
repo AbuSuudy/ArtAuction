@@ -45,23 +45,9 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddSource("MassTransit"))
     .WithMetrics(metrics => metrics.AddMeter("MassTransit"));
 
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
-    app.MapOpenApi();
-
-    app.MapScalarApiReference();
-
-//}
-
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapBidEndpoints();
 
 app.UseExceptionHandler(errorApp =>
 {
@@ -75,16 +61,34 @@ app.UseExceptionHandler(errorApp =>
         var logger = context.RequestServices
          .GetRequiredService<ILogger<Program>>();
 
-        logger.LogError(exception?.Message, exception);
+        logger.LogError(exception, exception?.Message);
 
         var dev = app.Environment.IsDevelopment();
 
         await context.Response.WriteAsJsonAsync(new ProblemDetails
         {
             Title = "An unexpected error occurred.",
-            Detail = exception.Message,
+            Detail = exception?.Message,
             Status = 500
         });
     });
 });
+
+// Configure the HTTP request pipeline.
+//if (app.Environment.IsDevelopment())
+//{
+app.MapOpenApi();
+
+    app.MapScalarApiReference();
+
+//}
+
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+
+
+
+app.MapBidEndpoints();
+
 app.Run();

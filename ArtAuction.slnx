@@ -1,7 +1,7 @@
 <Solution>
   <Folder Name="/Infra/">
     <File Path="Infra/main.bicep" />
-    <File Path="Infra/Resources.bicep" />
+    <File Path="Infra/resources.bicep" />
   </Folder>
   <Folder Name="/Infra/Modules/">
     <File Path="Infra/Modules/appInsight.bicep" />

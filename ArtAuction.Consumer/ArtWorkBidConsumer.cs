@@ -17,7 +17,7 @@ namespace ArtAuction.Consumer
                 Price = context.Message.Art.Price,
                 Name = context.Message.Art.Name,
                 ArtWork = context.Message.Art.ArtWork,
-                Bid = (long) (context.Message.Bid * 100),
+                Bid = (long)(context.Message.Bid * 100),
                 Id = context.Message.Id,
                 BidStaus = BidStaus.Submited
             });

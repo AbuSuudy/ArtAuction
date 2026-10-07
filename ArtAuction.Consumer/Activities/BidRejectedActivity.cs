@@ -24,7 +24,7 @@ namespace ArtAuction.Consumer.Activities
 
             await tableclient.AddEntityAsync(new BidCompensationEntity(context.Log.ArtWorkBid.Art.Name, context.Log.ArtWorkBid.Id.ToString())
             {
-                Bid = (long) (context.Log.ArtWorkBid.Bid * 100),
+                Bid = (long)(context.Log.ArtWorkBid.Bid * 100),
                 Id = context.Log.ArtWorkBid.Id,
                 BidCompensationStaus = BidCompensationStaus.BidRejected_Compensated
             });

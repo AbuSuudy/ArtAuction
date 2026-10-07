@@ -29,13 +29,11 @@ A review of the full solution: API, Consumer, Contract, Bicep and GitHub workflo
   - Where: `ArtAuction.Consumer/ArtWorkBidConsumer.cs:20` and all three activities' `Compensate` methods
   - Fix: `(long)(Bid * 100)`, or just store `decimal`/`double`.
 
-- [ ] **The error handler never catches endpoint errors.** ~Mostly fixed: `UseExceptionHandler` is now registered right after `app.Build()`, before `MapBidEndpoints`; `LogError` arguments are in the right order (`logger.LogError(exception, exception?.Message)`); and `Detail = exception?.Message` (line 71) is now null-safe. Still open: the computed `dev` flag is never used to gate what's returned, so exception text still goes to callers in every environment, including Production.
-  - Where: `ArtAuction.API/Program.cs:52-75`
-  - Fix: only include `Detail` when `dev` is true.
+- [x] **The error handler never catches endpoint errors.** ~Fixed: `AddExceptionHandler<GlobalExceptionHandler>()` is now registered before `builder.Build()`, and `app.UseExceptionHandler()` is wired into the pipeline before `MapBidEndpoints`. `GlobalExceptionHandler` gates `Detail`/`exception`/`stackTrace` behind `env.IsDevelopment()`.
+  - Where: `ArtAuction.API/Program.cs:44,58`, `ArtAuction.API/GlobalExceptionHandler.cs`
 
-- [ ] **The worker's revision cleanup does nothing.** Still picks revisions that are already inactive (`select(.properties.active == false)`) and then deactivates them — a no-op.
-  - Where: `.github/workflows/worker-container.yml:97`
-  - Fix: filter on `active == true` and skip the latest revision. With `Single` mode the platform already does this, so the step can probably go.
+- [x] **The worker's revision cleanup does nothing.** ~Fixed: the no-op cleanup step was removed from `worker-container.yml` entirely. The consumer runs in `Single` revision mode, where the platform already deactivates the previous revision on every deploy, so the step was redundant.
+  - Where: `.github/workflows/worker-container.yml`
 
 - [x] **Role assignments are applied to the whole resource group, not the resource.** ~Fixed: `roleAssignments.bicep` is gone; `serviceBus.bicep` and `storageAccount.bicep` now use the AVM modules' resource-scoped `roleAssignments` param.
   - Where: `Infra/Modules/roleAssignments.bicep:5`

@@ -5,6 +5,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Amqp.Framing;
 using Microsoft.Identity.Web;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -49,39 +50,16 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
-app.UseExceptionHandler(errorApp =>
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+
+if (app.Environment.IsDevelopment())
 {
-    errorApp.Run(async context =>
-    {
-        context.Response.StatusCode = 500;
-
-        var feature = context.Features.Get<IExceptionHandlerFeature>();
-        var exception = feature?.Error;
-
-        var logger = context.RequestServices
-         .GetRequiredService<ILogger<Program>>();
-
-        logger.LogError(exception, exception?.Message);
-
-        var dev = app.Environment.IsDevelopment();
-
-        await context.Response.WriteAsJsonAsync(new ProblemDetails
-        {
-            Title = "An unexpected error occurred.",
-            Detail = exception?.Message,
-            Status = 500
-        });
-    });
-});
-
-// Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
-app.MapOpenApi();
+    app.MapOpenApi();
 
     app.MapScalarApiReference();
 
-//}
+}
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

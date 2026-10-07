@@ -35,8 +35,8 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
           image: contains(imageOverrides, app.name) ? imageOverrides[app.name] : placeholderImage
           name: app.name
           resources: {
-            cpu: 1
-            memory: '2.0Gi'
+            cpu: json('0.25')
+            memory: '0.5Gi'
           }
           env: concat(
             [

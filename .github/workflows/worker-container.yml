@@ -86,30 +86,6 @@ jobs:
               --revision-suffix "sha-${GITHUB_SHA::7}" \
               -o tsv
 
-            #Remove container app revisions older than 7 days that are not blue or green
-            cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S)
-
-            az containerapp revision list \
-                --name "$APP_NAME" \
-                --resource-group "$RG" \
-                -o json |
-            jq -c '.[] 
-                | select(.properties.active == false)
-                | {revision: .name, created: .properties.createdTime}' |
-            while read -r rev; do
-                revision=$(jq -r '.revision' <<< "$rev")
-                created=$(jq -r '.created' <<< "$rev")
-
-                [[ "$created" > "$cutoff" ]] && continue
-
-                echo "Deactivating $revision"
-
-                az containerapp revision deactivate \
-                    --name "$APP_NAME" \
-                    --resource-group "$RG" \
-                    --revision "$revision"
-            done
-
   change_active_revision:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'change_active_revision' && github.event.inputs.app_name != '' && github.event.inputs.revision_name != ''
     runs-on: ubuntu-latest

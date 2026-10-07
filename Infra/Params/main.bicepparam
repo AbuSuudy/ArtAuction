@@ -20,6 +20,8 @@ param containerApps = [
     env: [
       { name: 'OTEL_SERVICE_NAME', value: 'ca-artauctionapi-neu-001' }
       { name: 'ServiceBus__Host', value: 'sb://${serviceBusName}.servicebus.windows.net' }
+      { name: 'DOTNET_ENVIRONMENT', value: 'Development' }
+      { name: 'ASPNETCORE_ENVIRONMENT', value: 'Development' }
     ]
   }
   {
@@ -32,6 +34,8 @@ param containerApps = [
       { name: 'OTEL_SERVICE_NAME', value: 'ca-artauctionconsumer-neu-001' }
       { name: 'ServiceBus__Host', value: 'sb://${serviceBusName}.servicebus.windows.net' }
       { name: 'StorageAccount__TableUri', value: 'https://${storageAccountName}.table.core.windows.net' }
+      { name: 'DOTNET_ENVIRONMENT', value: 'Development' }
+      { name: 'ASPNETCORE_ENVIRONMENT', value: 'Development' }
     ]
   }
 ]

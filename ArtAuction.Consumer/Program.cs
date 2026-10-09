@@ -34,13 +34,13 @@ builder.Services.AddMassTransit(x =>
     x.AddActivity<BidRejectedActivity, BidRejectedArguments, BidRejectedLog>();
     x.AddActivity<AquiredActivity, AquiredArguments, AquiredLog>();
 
-    var rabbitMQConnectionString = builder.Configuration.GetConnectionString("messaging");
+    var rabbitMQConnectionString = builder.Configuration.GetConnectionString("rabbit-mq");
 
     if (rabbitMQConnectionString is not null)
     {
         x.UsingRabbitMq((context, cfg) =>
         {
-            cfg.Host(new Uri(builder.Configuration.GetConnectionString("messaging")!));
+            cfg.Host(new Uri(rabbitMQConnectionString));
 
             cfg.ConfigureEndpoints(context);
         });

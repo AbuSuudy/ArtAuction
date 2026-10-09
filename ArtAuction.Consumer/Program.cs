@@ -34,7 +34,9 @@ builder.Services.AddMassTransit(x =>
     x.AddActivity<BidRejectedActivity, BidRejectedArguments, BidRejectedLog>();
     x.AddActivity<AquiredActivity, AquiredArguments, AquiredLog>();
 
-    if (builder.Environment.IsDevelopment())
+    var rabbitMQConnectionString = builder.Configuration.GetConnectionString("messaging");
+
+    if (rabbitMQConnectionString is not null)
     {
         x.UsingRabbitMq((context, cfg) =>
         {

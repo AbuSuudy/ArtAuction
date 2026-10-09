@@ -26,7 +26,10 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddMassTransit(x =>
 {
-    if (builder.Environment.IsDevelopment())
+
+    var rabbitMQConnectionString = builder.Configuration.GetConnectionString("messaging");
+
+    if (rabbitMQConnectionString is not null)
     {
         x.UsingRabbitMq((context, cfg) =>
         {

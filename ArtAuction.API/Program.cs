@@ -2,6 +2,7 @@ using ArtAuction.API;
 using ArtAuction.API.Endpoints;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using MassTransit;
+using OpenTelemetry;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using Scalar.AspNetCore;
@@ -25,12 +26,24 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddMassTransit(x =>
 {
-    x.UsingAzureServiceBus((context, cfg) =>
+    if (builder.Environment.IsDevelopment())
     {
-        cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!));
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(new Uri(builder.Configuration.GetConnectionString("messaging")!));
 
-        cfg.ConfigureEndpoints(context);
-    });
+            cfg.ConfigureEndpoints(context);
+        });
+    }
+    else
+    {
+        x.UsingAzureServiceBus((context, cfg) =>
+        {
+            cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!));
+
+            cfg.ConfigureEndpoints(context);
+        });
+    }
 });
 
 builder.Services.AddOpenTelemetry()
@@ -38,6 +51,7 @@ builder.Services.AddOpenTelemetry()
 {
     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
 })
+.UseOtlpExporter()
 .WithTracing(tracing => tracing.AddSource("MassTransit"))
 .WithMetrics(metrics => metrics.AddMeter("MassTransit"));
 

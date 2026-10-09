@@ -2,12 +2,7 @@ using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var serviceBus = builder.AddAzureServiceBus("messaging")
-    .RunAsEmulator(emulator =>
-    {
-        emulator.WithHostPort(7777);
-    });
-
+var rabbitmq = builder.AddRabbitMQ("messaging");
 var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(azurite =>
     {
@@ -15,12 +10,15 @@ var storage = builder.AddAzureStorage("storage")
                .WithTablePort(27001);
     });
 
+var tables = storage.AddTables("tables");
 
 var api = builder.AddProject<Projects.ArtAuction_Api>("api")
-                 .PublishAsDockerFile();
+    .WithReference(rabbitmq)
+    .PublishAsDockerFile();
 
-var worker = builder.AddProject<Projects.ArtAuction_Worker>("worker")
-                    .PublishAsDockerFile();
-
+var consumer = builder.AddProject<Projects.ArtAuction_Consumer>("consumer")
+    .WithReference(rabbitmq)
+    .WithReference(tables)
+    .PublishAsDockerFile();
 
 builder.Build().Run();

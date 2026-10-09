@@ -4,15 +4,20 @@ using Azure.Data.Tables;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using MassTransit;
+using OpenTelemetry;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
 
 builder.Services.AddSingleton<TableServiceClient>(sp =>
 {
-    var serviceClient = new TableServiceClient(
-        new Uri(builder.Configuration["StorageAccount:TableUri"]!),
-        new DefaultAzureCredential());
+    var tablesConnectionString = builder.Configuration.GetConnectionString("tables");
+
+    var serviceClient = tablesConnectionString is not null
+        ? new TableServiceClient(tablesConnectionString)
+        : new TableServiceClient(
+            new Uri(builder.Configuration["StorageAccount:TableUri"]!),
+            new DefaultAzureCredential());
 
     serviceClient.CreateTableIfNotExists("BidCompensation");
 
@@ -29,12 +34,24 @@ builder.Services.AddMassTransit(x =>
     x.AddActivity<BidRejectedActivity, BidRejectedArguments, BidRejectedLog>();
     x.AddActivity<AquiredActivity, AquiredArguments, AquiredLog>();
 
-    x.UsingAzureServiceBus((context, cfg) =>
+    if (builder.Environment.IsDevelopment())
     {
-        cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!));
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(new Uri(builder.Configuration.GetConnectionString("messaging")!));
 
-        cfg.ConfigureEndpoints(context);
-    });
+            cfg.ConfigureEndpoints(context);
+        });
+    }
+    else
+    {
+        x.UsingAzureServiceBus((context, cfg) =>
+        {
+            cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!));
+
+            cfg.ConfigureEndpoints(context);
+        });
+    }
 });
 
 builder.Services.AddOpenTelemetry()
@@ -43,7 +60,8 @@ builder.Services.AddOpenTelemetry()
     .UseAzureMonitorExporter(options =>
     {
         options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-    });
+    })
+    .UseOtlpExporter();
 
 var host = builder.Build();
 host.Run();

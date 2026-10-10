@@ -1,0 +1,109 @@
+name: Worker Container Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+
+      action:
+        description: "Manage container traffic"
+        required: true
+        type: choice
+        options:
+          - build_and_deploy_container
+          - change_active_revision
+
+      app_name:
+        description: "Container app to update"
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - ca-artauctionconsumer-neu-001
+          
+      revision_name:
+        description: "Revision to activate"
+        required: false
+        default: ""
+        type: string
+
+  push:
+    branches:
+      - main
+    paths:
+      - "ArtAuction.Consumer/**"
+      - "ArtAuction.Contract/**"
+
+jobs:
+  build_and_deploy_container:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build_and_deploy_container')
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        app:
+          - dockerfile: ArtAuction.Consumer/Dockerfile
+            containerAppName: ca-artauctionconsumer-neu-001
+            imageName: ca-artauctionconsumer-neu-001
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build Container and push to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ vars.REGISTRY_LOGIN_SERVER }}
+          username: ${{ vars.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - run: |
+          docker build \
+            -f ${{ matrix.app.dockerfile }} \
+            -t ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }} \
+            .
+
+          docker push \
+            ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
+
+      - name: Deploy worker container
+        shell: bash
+        run: |
+            set -euo pipefail
+
+            APP_NAME="${{ matrix.app.containerAppName }}"
+            RG="${{ vars.RESOURCE_GROUP }}"
+            IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
+
+            az containerapp update \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --image "$IMAGE" \
+              --revision-suffix "sha-${GITHUB_SHA::7}" \
+              -o tsv
+
+  change_active_revision:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'change_active_revision' && github.event.inputs.app_name != '' && github.event.inputs.revision_name != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Update revison only single revision should be active
+        shell: bash
+        run: |
+            set -euo pipefail
+
+            APP_NAME="${{ github.event.inputs.app_name }}"
+            REVISION_NAME="${{ github.event.inputs.revision_name }}"
+            RG="${{ vars.RESOURCE_GROUP }}"
+
+            az containerapp revision activate \
+              --name "$APP_NAME" \
+              --resource-group "$RG" \
+              --revision "$REVISION_NAME"

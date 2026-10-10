@@ -1,0 +1,94 @@
+name: Infra Pipeline
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "Infra/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Bicep
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Resolve currently running container images
+        id: images
+        run: |
+          set -euo pipefail
+
+          RG="${{ vars.RESOURCE_GROUP }}"
+          apps=(ca-artauctionapi-neu-001 ca-artauctionconsumer-neu-001)
+
+          overrides="{}"
+          #2>/dev/null 
+          #discard any error messages from the az CLI, so we can continue to deploy even if the apps don't exist yet.
+          #2 = standard error (stderr) — where programs normally send error messages.
+          #> = redirect output somewhere else.
+          #/dev/null = a special file that discards anything sent to it.
+
+          for app in "${apps[@]}"; do
+            image=$(az containerapp show \
+              --name "$app" \
+              --resource-group "$RG" \
+              --query "properties.template.containers[0].image" \
+              -o tsv 2>/dev/null || true)
+
+            # Skip apps that don't exist yet (first deploy) or are still on the
+            # placeholder image, so the Bicep default takes over.
+            if [[ -n "$image" && "$image" != *k8se/quickstart* ]]; then
+              overrides=$(jq --arg k "$app" --arg v "$image" '. + {($k): $v}' <<< "$overrides")
+            fi
+          done
+
+          echo "overrides=$overrides" >> "$GITHUB_OUTPUT"
+
+      - name: Bicep Deployment
+        uses: azure/bicep-deploy@v2
+        with:
+          type: deploymentStack
+          operation: create
+          name: Development
+          location: uksouth
+          scope: subscription
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          template-file: Infra/main.bicep
+          parameters-file: Infra/Params/main.bicepparam
+          parameters: |
+            {"imageOverrides": ${{ steps.images.outputs.overrides }}}
+          action-on-unmanage-resources: delete
+          action-on-unmanage-resourcegroups: delete
+          deny-settings-mode: none
+
+  configure-container:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        containerapp:
+          - ca-artauctionapi-neu-001
+          - ca-artauctionconsumer-neu-001
+
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Configure Container App Registry
+        run: |
+          az containerapp registry set \
+            --name ${{ matrix.containerapp }} \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --server ${{ vars.REGISTRY_LOGIN_SERVER }} \
+            --identity system

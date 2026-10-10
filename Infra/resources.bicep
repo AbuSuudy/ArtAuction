@@ -80,6 +80,9 @@ module containerRegistry 'Modules/containerRegistry.bicep' = {
   params: {
     acrName: acrName
   }
+  dependsOn: [
+    serviceBus
+  ]
 }
 
 module storageAccount 'Modules/storageAccount.bicep' = {
@@ -87,6 +90,31 @@ module storageAccount 'Modules/storageAccount.bicep' = {
   params: {
     storageAccountName: storageAccountName
   }
+}
+
+module managedIdentities 'Modules/managedIdentities.bicep' = {
+  name: 'managed-identities'
+  params: {
+    containerAppNames: map(containerApps, a => a.name)
+  }
+}
+
+var consumerAppIndex = indexOf(map(containerApps, a => a.name), 'ca-artauctionconsumer-neu-001')
+
+module roleAssignments 'Modules/roleAssignments.bicep' = {
+  name: 'role-assignments'
+  params: {
+    acrName: acrName
+    serviceBusName: serviceBusName
+    storageAccountName: storageAccountName
+    containerAppPrincipalIds: managedIdentities.outputs.principalIds
+    storageTablePrincipalId: managedIdentities.outputs.principalIds[consumerAppIndex]
+  }
+  dependsOn: [
+    containerRegistry
+    serviceBus
+    storageAccount
+  ]
 }
 
 module container 'Modules/containerApps.bicep' = {
@@ -99,28 +127,12 @@ module container 'Modules/containerApps.bicep' = {
     serviceBusName: serviceBusName
     acrName: acrName
     imageOverrides: imageOverrides
+    identityResourceIds: managedIdentities.outputs.resourceIds
   }
   dependsOn: [
     containerRegistry
     serviceBus
-  ]
-}
-
-var apiAppIndex = indexOf(map(containerApps, a => a.name), 'ca-artauctionconsumer-neu-001')
-
-module roleAssignments 'Modules/roleAssignments.bicep' = {
-  name: 'role-assignments'
-  params: {
-    acrName: acrName
-    serviceBusName: serviceBusName
-    storageAccountName: storageAccountName
-    containerAppPrincipalIds: container.outputs.systemAssignedMIPrincipalIds
-    storageTablePrincipalId: container.outputs.systemAssignedMIPrincipalIds[apiAppIndex]
-  }
-  dependsOn: [
-    containerRegistry
-    serviceBus
-    storageAccount
+    roleAssignments
   ]
 }
 

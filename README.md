@@ -19,6 +19,52 @@ Allow the container app to pull from the container registry. This is done in my 
 az containerapp registry set --name art-auction-api --resource-group MassTransit-Playground --server masstransitcontainerregistry.azurecr.io --identity system
 ```
 
+## Why Container Apps Use User-Assigned Identities
+
+The container apps use a user-assigned managed identity (`Infra/Modules/managedIdentities.bicep`) instead of `systemAssigned: true`. This isn't a style choice — system-assigned identity caused a real deployment deadlock.
+
+The consumer app's KEDA scale rule authenticates to Service Bus using the container app's identity:
+```bicep
+custom: {
+  type: 'azure-servicebus'
+  identity: 'system'
+  metadata: { queueName: ..., namespace: serviceBusName, ... }
+}
+```
+
+When Container Apps provisions a revision, it has to validate that scale rule's auth against Service Bus *as part of* bringing the revision online — not as a later step. With a system-assigned identity, the principal ID doesn't exist until the container app itself is created, so the role assignment (`Modules/roleAssignments.bicep`) can only run *after* the container app module finishes. But the container app can't finish until the scaler successfully authenticates, which needs the role assignment to already exist. That's a true circular dependency — no `dependsOn` ordering can resolve it, because the missing piece (the principal ID) is only produced by the exact step that's blocked waiting on something derived from it.
+
+In practice this showed up as both container apps failing with `Operation expired` after ~20 minutes, with zero revisions ever created and zero RBAC role assignments ever granted on the ACR/Service Bus/Storage Account.
+
+A user-assigned identity breaks the cycle: it's its own resource, so its principal ID is known immediately on creation, with no dependency on the container app. That makes the order a straight line — create identity, grant roles, then create the container app referencing the already-permissioned identity — instead of a cycle.
+
+**Before (system-assigned) — circular, deadlocks forever:**
+```mermaid
+flowchart LR
+    CA["containerApps<br/>(creates revision +<br/>KEDA SB scaler)"]
+    RA["roleAssignments<br/>(grants SB role<br/>to principalId)"]
+
+    CA -- "needs principalId<br/>(only exists once CA is created)" --> RA
+    RA -- "must run before CA's<br/>scaler auth can succeed" --> CA
+
+    style CA fill:#5a1f1f,stroke:#f66,color:#fff
+    style RA fill:#5a1f1f,stroke:#f66,color:#fff
+```
+
+**After (user-assigned) — straight line, no cycle:**
+```mermaid
+flowchart LR
+    MI["managedIdentities<br/>(own resource,<br/>principalId known<br/>immediately)"]
+    RA2["roleAssignments<br/>(grants SB/ACR/storage<br/>roles to that principalId)"]
+    CA2["containerApps<br/>(references the already-<br/>permissioned identity)"]
+
+    MI --> RA2 --> CA2
+
+    style MI fill:#1f3d1f,stroke:#6f6,color:#fff
+    style RA2 fill:#1f3d1f,stroke:#6f6,color:#fff
+    style CA2 fill:#1f3d1f,stroke:#6f6,color:#fff
+```
+
 ## Delete Resources From Deployment Stack 
 
 ```

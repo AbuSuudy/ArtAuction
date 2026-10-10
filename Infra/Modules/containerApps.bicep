@@ -15,26 +15,31 @@ param appInsightsConnectionString string
 @description('Service Bus namespace name, used as the namespace for azure-servicebus scale rules')
 param serviceBusName string
 
-@description('Container Registry name, used so apps can pull their images using their own system-assigned identity')
+@description('Container Registry name, used so apps can pull their images using their own user-assigned identity')
 param acrName string
 
 @description('Map of container app name to the image it is currently running. Apps missing from this map (e.g. on first deploy) fall back to the placeholder image.')
 param imageOverrides object = {}
 
+@description('User-assigned managed identity resource IDs, in the same order as containerApps. Granted AcrPull/Service Bus roles ahead of time so revision provisioning never races role assignment.')
+param identityResourceIds string[]
+
 var placeholderImage = 'mcr.microsoft.com/k8se/quickstart:latest'
 
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
-  for app in containerApps: {
+  for (app, i) in containerApps: {
     name: '${app.name}-${uniqueString(deployment().name)}'
     params: {
       name: app.name
       managedIdentities: {
-        systemAssigned: true
+        userAssignedResourceIds: [
+          identityResourceIds[i]
+        ]
       }
       registries: [
         {
           server: '${acrName}.azurecr.io'
-          identity: 'system'
+          identity: identityResourceIds[i]
         }
       ]
       diagnosticSettings: [
@@ -73,7 +78,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
               name: 'sb-${toLower(replace(queueName, '_', '-'))}'
               custom: {
                 type: 'azure-servicebus'
-                identity: 'system'
+                identity: identityResourceIds[i]
                 metadata: {
                   queueName: queueName
                   namespace: serviceBusName
@@ -85,9 +90,4 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
       }
     }
   }
-]
-
-@description('System assigned managed identity principal ids, in the same order as containerApps')
-output systemAssignedMIPrincipalIds string[] = [
-  for (app, i) in containerApps: containerApp[i].outputs.systemAssignedMIPrincipalId
 ]

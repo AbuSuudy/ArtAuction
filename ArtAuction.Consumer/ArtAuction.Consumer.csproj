@@ -8,11 +8,6 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="api-container.yml" />
-    <None Remove="infra.yml" />
-    <None Remove="worker-container.yml" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.Data.Tables" Version="12.13.0" />

@@ -13,12 +13,12 @@ param nspName = 'NSP-ARTAUCTION-NEU-001'
 @description('Every queue the consumer side (ArtWorkBidConsumer + its routing-slip activities) needs. Created up front so the KEDA scale rules below always have something to watch, instead of waiting on MassTransit to create them at runtime.')
 var consumerQueueNames = [
   'ArtWorkBid'
-  'BidAccepted_execute'
-  'BidAccepted_compensate'
-  'BidRejected_execute'
-  'BidRejected_compensate'
-  'Aquired_execute'
-  'Aquired_compensate'
+  'BidAccepted-execute'
+  'BidAccepted-compensate'
+  'BidRejected-execute'
+  'BidRejected-compensate'
+  'Aquired-execute'
+  'Aquired-compensate'
 ]
 
 param serviceBusQueueNames = consumerQueueNames

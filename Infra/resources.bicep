@@ -62,7 +62,6 @@ module serviceBus 'Modules/serviceBus.bicep' = {
   name: serviceBusName
   params: {
     serviceBusName: serviceBusName
-    identites: container.outputs.systemAssignedMIPrincipalIds
     queueNames: serviceBusQueueNames
   }
 }
@@ -73,6 +72,20 @@ module containerEnvironment 'Modules/containerEnvironment.bicep' = {
     environmentName: environmentName
     logAnalyticsWorkspaceResourceId: logAnalytics.outputs.resourceId
     appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
+  }
+}
+
+module containerRegistry 'Modules/containerRegistry.bicep' = {
+  name: acrName
+  params: {
+    acrName: acrName
+  }
+}
+
+module storageAccount 'Modules/storageAccount.bicep' = {
+  name: storageAccountName
+  params: {
+    storageAccountName: storageAccountName
   }
 }
 
@@ -87,24 +100,28 @@ module container 'Modules/containerApps.bicep' = {
     acrName: acrName
     imageOverrides: imageOverrides
   }
-}
-
-module containerRegistry 'Modules/containerRegistry.bicep' = {
-  name: acrName
-  params: {
-    acrName: acrName
-    identites: container.outputs.systemAssignedMIPrincipalIds
-  }
+  dependsOn: [
+    containerRegistry
+    serviceBus
+  ]
 }
 
 var apiAppIndex = indexOf(map(containerApps, a => a.name), 'ca-artauctionconsumer-neu-001')
 
-module storageAccount 'Modules/storageAccount.bicep' = {
-  name: storageAccountName
+module roleAssignments 'Modules/roleAssignments.bicep' = {
+  name: 'role-assignments'
   params: {
+    acrName: acrName
+    serviceBusName: serviceBusName
     storageAccountName: storageAccountName
-    containerIdentity: container.outputs.systemAssignedMIPrincipalIds[apiAppIndex]
+    containerAppPrincipalIds: container.outputs.systemAssignedMIPrincipalIds
+    storageTablePrincipalId: container.outputs.systemAssignedMIPrincipalIds[apiAppIndex]
   }
+  dependsOn: [
+    containerRegistry
+    serviceBus
+    storageAccount
+  ]
 }
 
 module networkSecurityPerimeter 'Modules/networkSecurityPerimeter.bicep' = {

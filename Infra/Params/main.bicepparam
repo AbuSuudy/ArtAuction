@@ -28,7 +28,7 @@ param containerApps = [
     name: 'ca-artauctionapi-neu-001'
     disableIngress: false
     activeRevisionsMode: 'Multiple'
-    minReplicas: 1
+    minReplicas: 0
     maxReplicas: 3
     scaleQueueNames: []
     env: [

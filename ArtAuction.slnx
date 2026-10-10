@@ -15,6 +15,7 @@
     <File Path="Infra/Modules/containerRegistry.bicep" />
     <File Path="Infra/Modules/keyVault.bicep" />
     <File Path="Infra/Modules/logAnalytics.bicep" />
+    <File Path="Infra/Modules/managedIdentities.bicep" />
     <File Path="Infra/Modules/networkSecurityPerimeter.bicep" />
     <File Path="Infra/Modules/serviceBus.bicep" />
     <File Path="Infra/Modules/storageAccount.bicep" />

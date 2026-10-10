@@ -58,6 +58,15 @@ module appInsights 'Modules/appInsight.bicep' = {
   }
 }
 
+module serviceBus 'Modules/serviceBus.bicep' = {
+  name: serviceBusName
+  params: {
+    serviceBusName: serviceBusName
+    identites: container.outputs.systemAssignedMIPrincipalIds
+    queueNames: serviceBusQueueNames
+  }
+}
+
 module containerEnvironment 'Modules/containerEnvironment.bicep' = {
   name: environmentName
   params: {
@@ -85,15 +94,6 @@ module containerRegistry 'Modules/containerRegistry.bicep' = {
   params: {
     acrName: acrName
     identites: container.outputs.systemAssignedMIPrincipalIds
-  }
-}
-
-module serviceBus 'Modules/serviceBus.bicep' = {
-  name: serviceBusName
-  params: {
-    serviceBusName: serviceBusName
-    identites: container.outputs.systemAssignedMIPrincipalIds
-    queueNames: serviceBusQueueNames
   }
 }
 

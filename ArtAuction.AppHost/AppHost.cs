@@ -1,8 +1,7 @@
-using Projects;
-
 var builder = DistributedApplication.CreateBuilder(args);
 
 var rabbitmq = builder.AddRabbitMQ("rabbit-mq").WithManagementPlugin();
+
 var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(azurite =>
     {

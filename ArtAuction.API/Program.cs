@@ -2,9 +2,9 @@ using ArtAuction.API;
 using ArtAuction.API.Endpoints;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using MassTransit;
-using OpenTelemetry;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
+using OpenTelemetry;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);

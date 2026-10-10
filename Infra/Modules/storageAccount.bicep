@@ -9,8 +9,7 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.32.1' = {
   params: {
     name: storageAccountName
     kind: 'StorageV2'
-    skuName: 'Standard_RAGRS'
-    allowBlobPublicAccess: true
+    skuName: 'Standard_LRS'
     publicNetworkAccess: 'Enabled'
     networkAcls: {
       defaultAction: 'Allow'

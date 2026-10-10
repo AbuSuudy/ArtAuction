@@ -33,6 +33,9 @@ param nspAssociatedResources nspResourceAccess[]
 @description('Map of container app name to the image it is currently running, so an infra-only deploy does not reset it to the placeholder image')
 param imageOverrides object = {}
 
+@description('Service Bus queue names to create on the namespace')
+param serviceBusQueueNames string[] = []
+
 module keyVault 'Modules/keyVault.bicep' = {
   name: keyVaultName
   params: {
@@ -71,6 +74,8 @@ module container 'Modules/containerApps.bicep' = {
     workspaceResourceId: logAnalytics.outputs.resourceId
     environmentResourceId: containerEnvironment.outputs.resourceId
     appInsightsConnectionString: appInsights.outputs.appInsightsConnectionString
+    serviceBusName: serviceBusName
+    acrName: acrName
     imageOverrides: imageOverrides
   }
 }
@@ -88,6 +93,7 @@ module serviceBus 'Modules/serviceBus.bicep' = {
   params: {
     serviceBusName: serviceBusName
     identites: container.outputs.systemAssignedMIPrincipalIds
+    queueNames: serviceBusQueueNames
   }
 }
 

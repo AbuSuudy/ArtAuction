@@ -12,6 +12,12 @@ param workspaceResourceId string
 @description('App Insights Connection String')
 param appInsightsConnectionString string
 
+@description('Service Bus namespace name, used as the namespace for azure-servicebus scale rules')
+param serviceBusName string
+
+@description('Container Registry name, used so apps can pull their images using their own system-assigned identity')
+param acrName string
+
 @description('Map of container app name to the image it is currently running. Apps missing from this map (e.g. on first deploy) fall back to the placeholder image.')
 param imageOverrides object = {}
 
@@ -25,6 +31,12 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
       managedIdentities: {
         systemAssigned: true
       }
+      registries: [
+        {
+          server: '${acrName}.azurecr.io'
+          identity: 'system'
+        }
+      ]
       diagnosticSettings: [
         {
           workspaceResourceId: workspaceResourceId
@@ -56,6 +68,20 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
       scaleSettings: {
           minReplicas: app.minReplicas
           maxReplicas: app.maxReplicas
+          rules: [
+            for queueName in app.scaleQueueNames: {
+              name: 'sb-${toLower(replace(queueName, '_', '-'))}'
+              custom: {
+                type: 'azure-servicebus'
+                identity: 'system'
+                metadata: {
+                  queueName: queueName
+                  namespace: serviceBusName
+                  messageCount: '1'
+                }
+              }
+            }
+          ]
       }
     }
   }

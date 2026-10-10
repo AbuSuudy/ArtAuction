@@ -68,27 +68,3 @@ jobs:
           action-on-unmanage-resources: delete
           action-on-unmanage-resourcegroups: delete
           deny-settings-mode: none
-
-  configure-container:
-    needs: deploy
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        containerapp:
-          - ca-artauctionapi-neu-001
-          - ca-artauctionconsumer-neu-001
-
-    steps:
-      - name: Log in to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Configure Container App Registry
-        run: |
-          az containerapp registry set \
-            --name ${{ matrix.containerapp }} \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
-            --server ${{ vars.REGISTRY_LOGIN_SERVER }} \
-            --identity system

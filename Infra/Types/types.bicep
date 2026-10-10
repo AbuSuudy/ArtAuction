@@ -13,6 +13,8 @@ type containerAppConfig = {
   maxReplicas: int
   @description('Container-specific environment variables, in addition to ApplicationInsights__ConnectionString which is always injected')
   env: containerAppEnvVar[]
+  @description('Service Bus queue names to scale this app against. One azure-servicebus KEDA rule is created per queue, authenticated with the app\'s system-assigned identity. Leave empty for apps that should not scale on queue depth.')
+  scaleQueueNames: string[]
 }
 
 @export()

@@ -10,6 +10,19 @@ param storageAccountName = 'startauctionneu001'
 param keyVaultName = 'KV-ARTAUCTION-NEU-001'
 param nspName = 'NSP-ARTAUCTION-NEU-001'
 
+@description('Every queue the consumer side (ArtWorkBidConsumer + its routing-slip activities) needs. Created up front so the KEDA scale rules below always have something to watch, instead of waiting on MassTransit to create them at runtime.')
+var consumerQueueNames = [
+  'ArtWorkBid'
+  'BidAccepted_execute'
+  'BidAccepted_compensate'
+  'BidRejected_execute'
+  'BidRejected_compensate'
+  'Aquired_execute'
+  'Aquired_compensate'
+]
+
+param serviceBusQueueNames = consumerQueueNames
+
 param containerApps = [
   {
     name: 'ca-artauctionapi-neu-001'
@@ -17,6 +30,7 @@ param containerApps = [
     activeRevisionsMode: 'Multiple'
     minReplicas: 1
     maxReplicas: 3
+    scaleQueueNames: []
     env: [
       { name: 'OTEL_SERVICE_NAME', value: 'ca-artauctionapi-neu-001' }
       { name: 'ServiceBus__Host', value: 'sb://${serviceBusName}.servicebus.windows.net' }
@@ -28,8 +42,9 @@ param containerApps = [
     name: 'ca-artauctionconsumer-neu-001'
     disableIngress: true
     activeRevisionsMode: 'Single'
-    minReplicas: 1
+    minReplicas: 0
     maxReplicas: 1
+    scaleQueueNames: consumerQueueNames
     env: [
       { name: 'OTEL_SERVICE_NAME', value: 'ca-artauctionconsumer-neu-001' }
       { name: 'ServiceBus__Host', value: 'sb://${serviceBusName}.servicebus.windows.net' }

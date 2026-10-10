@@ -1,6 +1,6 @@
 using '../main.bicep'
 
-param logAnalyticsName = 'LAW-ARTAUCTION-NEU-001'
+param logAnalyticsName = 'LAW-ARTAUCTION-NEU-004'
 param appInsightsName = 'API-ARTAUCTION-NEU-001'
 param acrName = 'crartauctionneu001'
 param environmentName = 'CAE-ARTAUCTION-NEU-001'

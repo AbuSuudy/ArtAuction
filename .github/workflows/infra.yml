@@ -57,7 +57,7 @@ jobs:
         with:
           type: deploymentStack
           operation: create
-          name: Development
+          name: Development-RG-ARTAUCTION-NEU-001
           location: northeurope
           scope: subscription
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}

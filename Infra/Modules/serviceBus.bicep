@@ -4,7 +4,7 @@ param serviceBusName string
 @description('Queue names to create on the namespace')
 param queueNames string[] = []
 
-module servicebus 'br/public:avm/res/service-bus/namespace:0.16.2' = {
+module servicebus 'br/public:avm/res/service-bus/namespace:0.17.1' = {
   name: '${serviceBusName}-${uniqueString(deployment().name)}'
   params: {
     name: serviceBusName

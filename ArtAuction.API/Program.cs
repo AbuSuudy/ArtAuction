@@ -1,5 +1,6 @@
 using ArtAuction.API;
 using ArtAuction.API.Endpoints;
+using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -41,7 +42,13 @@ builder.Services.AddMassTransit(x =>
     {
         x.UsingAzureServiceBus((context, cfg) =>
         {
-            cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!));
+            cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!), h =>
+            {
+                h.TokenCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+                {
+                    ManagedIdentityClientId = builder.Configuration["ManagedIdentity:ClientId"]
+                });
+            });
 
             cfg.ConfigureEndpoints(context);
         });

@@ -24,6 +24,9 @@ param imageOverrides object = {}
 @description('User-assigned managed identity resource IDs, in the same order as containerApps. Granted AcrPull/Service Bus roles ahead of time so revision provisioning never races role assignment.')
 param identityResourceIds string[]
 
+@description('User-assigned managed identity client IDs, in the same order as containerApps. Injected as ManagedIdentity__ClientId so each app pins DefaultAzureCredential to its own identity.')
+param identityClientIds string[]
+
 var placeholderImage = 'mcr.microsoft.com/k8se/quickstart:latest'
 
 module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
@@ -60,6 +63,10 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
               {
                 name: 'ApplicationInsights__ConnectionString'
                 value: appInsightsConnectionString
+              }
+              {
+                name: 'ManagedIdentity__ClientId'
+                value: identityClientIds[i]
               }
             ],
             app.env

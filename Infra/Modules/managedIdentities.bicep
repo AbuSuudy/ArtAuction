@@ -13,3 +13,6 @@ output resourceIds string[] = [for i in range(0, length(containerAppNames)): ide
 
 @description('Identity principal IDs, in the same order as containerAppNames')
 output principalIds string[] = [for i in range(0, length(containerAppNames)): identities[i].properties.principalId]
+
+@description('Identity client IDs, in the same order as containerAppNames')
+output clientIds string[] = [for i in range(0, length(containerAppNames)): identities[i].properties.clientId]

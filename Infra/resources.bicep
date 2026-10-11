@@ -128,6 +128,7 @@ module container 'Modules/containerApps.bicep' = {
     acrName: acrName
     imageOverrides: imageOverrides
     identityResourceIds: managedIdentities.outputs.resourceIds
+    identityClientIds: managedIdentities.outputs.clientIds
   }
   dependsOn: [
     containerRegistry

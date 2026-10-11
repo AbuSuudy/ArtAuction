@@ -9,6 +9,11 @@ using OpenTelemetry;
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
 
+var managedIdentityCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+{
+    ManagedIdentityClientId = builder.Configuration["ManagedIdentity:ClientId"]
+});
+
 builder.Services.AddSingleton<TableServiceClient>(sp =>
 {
     var tablesConnectionString = builder.Configuration.GetConnectionString("tables");
@@ -17,7 +22,7 @@ builder.Services.AddSingleton<TableServiceClient>(sp =>
         ? new TableServiceClient(tablesConnectionString)
         : new TableServiceClient(
             new Uri(builder.Configuration["StorageAccount:TableUri"]!),
-            new DefaultAzureCredential());
+            managedIdentityCredential);
 
     serviceClient.CreateTableIfNotExists("BidCompensation");
 
@@ -49,7 +54,10 @@ builder.Services.AddMassTransit(x =>
     {
         x.UsingAzureServiceBus((context, cfg) =>
         {
-            cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!));
+            cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!), h =>
+            {
+                h.TokenCredential = managedIdentityCredential;
+            });
 
             cfg.ConfigureEndpoints(context);
         });

@@ -10,9 +10,6 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
@@ -21,7 +18,6 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
-//Register globally so this policy can be reused
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AuthorizationPolicies.SubmitBid, policy => policy.RequireRole("Bid.Submit"));
 
@@ -66,6 +62,7 @@ builder.Services.AddOpenTelemetry()
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -80,6 +77,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseExceptionHandler();
 
+app.MapHealthEndpoints();
 app.MapBidEndpoints();
 
 app.Run();

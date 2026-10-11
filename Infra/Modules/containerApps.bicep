@@ -71,6 +71,43 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
             ],
             app.env
           )
+        probes: [
+          {
+            type: 'Startup'
+            httpGet: {
+              path: 'health/Startup'
+              port: 8080
+            }
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 30
+          }
+          {
+            type: 'Liveness'
+            httpGet: {
+              path: 'health/Liveness'
+              port: 8080
+            }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          }
+          {
+            type: 'Readiness'
+            httpGet: {
+              path: 'health/Readiness'
+              port: 8080
+            }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          }
+        ]
         }
       ]
       ingressTargetPort: app.disableIngress ? null : 8080

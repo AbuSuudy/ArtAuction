@@ -27,6 +27,13 @@ namespace ArtAuction.API
 
                 foreach (var operation in document.Paths.Values.SelectMany(path => path.Operations))
                 {
+                    var isHealthCheck = operation.Value.Tags?.Any(tag => tag.Name == "Health") ?? false;
+
+                    if (isHealthCheck)
+                    {
+                        continue;
+                    }
+
                     operation.Value.Security ??= [];
                     operation.Value.Security.Add(new OpenApiSecurityRequirement
                     {

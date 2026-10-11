@@ -1,13 +1,16 @@
 using ArtAuction.Consumer;
 using ArtAuction.Consumer.Activities;
+using ArtAuction.Consumer.Endpoints;
 using Azure.Data.Tables;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using MassTransit;
 using OpenTelemetry;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddHostedService<Worker>();
+builder.Services.AddHealthChecks();
 
 var managedIdentityCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
 {
@@ -73,5 +76,8 @@ builder.Services.AddOpenTelemetry()
     })
     .UseOtlpExporter();
 
-var host = builder.Build();
-host.Run();
+var app = builder.Build();
+
+app.MapHealthEndpoints();
+
+app.Run();

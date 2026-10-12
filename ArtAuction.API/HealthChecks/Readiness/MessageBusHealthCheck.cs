@@ -1,7 +1,7 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace ArtAuction.API.HealthChecks
+namespace ArtAuction.API.HealthChecks.Readiness
 {
     public class MessageBusHealthCheck(IBusControl busControl) : IHealthCheck
     {

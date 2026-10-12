@@ -1,6 +1,7 @@
 using ArtAuction.API;
 using ArtAuction.API.Endpoints;
 using ArtAuction.API.HealthChecks;
+using ArtAuction.API.HealthChecks.Readiness;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using MassTransit;

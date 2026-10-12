@@ -3,7 +3,7 @@ param containerAppNames string[]
 
 resource identities 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = [
   for name in containerAppNames: {
-    name: 'id-${name}'
+    name: 'UDMI-${name}'
     location: resourceGroup().location
   }
 ]

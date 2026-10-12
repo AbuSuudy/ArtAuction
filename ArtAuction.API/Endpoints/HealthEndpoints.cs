@@ -8,30 +8,35 @@ namespace ArtAuction.API.Endpoints
         {
             var group = routes.MapGroup("Health")
                 .WithTags("Health");
-            //.ExcludeFromDescription();
 
-            group.MapGet("/Startup", CheckHealth)
+            group.MapGet("/Startup", 
+                (HealthCheckService healthCheckService, CancellationToken ct) =>
+                    CheckHealth(healthCheckService, "Startup", ct))
                 .WithSummary("Startup probe")
                 .WithDescription("Reports whether the app has finished starting up.");
 
-            group.MapGet("/Liveness", CheckHealth)
+            group.MapGet("/Liveness", 
+                (HealthCheckService healthCheckService, CancellationToken ct) =>
+                    CheckHealth(healthCheckService, "Liveness", ct))
                 .WithSummary("Liveness probe")
                 .WithDescription("Reports whether the app is still running correctly.");
 
-            group.MapGet("/Readiness", CheckHealth)
+            group.MapGet("/Readiness", 
+                (HealthCheckService healthCheckService, CancellationToken ct) =>
+                    CheckHealth(healthCheckService, "Readiness", ct))
                 .WithSummary("Readiness probe")
                 .WithDescription("Reports whether the app is ready to receive traffic.");
 
             return routes;
         }
 
-        private static async Task<IResult> CheckHealth(HealthCheckService healthCheckService)
+        private static async Task<IResult> CheckHealth(HealthCheckService healthCheckService, string HealthCheckType, CancellationToken cancellationToken = default)
         {
-            var report = await healthCheckService.CheckHealthAsync();
+            var report = await healthCheckService.CheckHealthAsync(
+              registration => registration.Name.Contains(HealthCheckType),
+              cancellationToken);
 
-            return report.Status == HealthStatus.Healthy
-                ? Results.Ok(report.Status.ToString())
-                : Results.Json(report.Status.ToString(), statusCode: StatusCodes.Status503ServiceUnavailable);
+            return Results.Ok(report);
         }
     }
 }

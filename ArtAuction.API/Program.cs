@@ -1,5 +1,6 @@
 using ArtAuction.API;
 using ArtAuction.API.Endpoints;
+using ArtAuction.API.HealthChecks;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using MassTransit;
@@ -62,7 +63,11 @@ builder.Services.AddOpenTelemetry()
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddHealthChecks();
+
+builder.Services.AddHealthChecks()
+    .AddCheck<StartUpHealthCheck>("Startup")
+    .AddCheck<ReadinessHealthCheck>("Readiness")
+    .AddCheck<LivenessHealthCheck>("Liveness");
 
 var app = builder.Build();
 

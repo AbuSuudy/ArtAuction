@@ -17,8 +17,7 @@ builder.Services.AddHealthChecks()
     .AddCheck<StartUpHealthCheck>("Startup", tags: [HealthEndpoints.StartupTag])
     .AddCheck<LivenessHealthCheck>("Liveness", tags: [HealthEndpoints.LiveTag])
     .AddCheck<MessageBusHealthCheck>("MessageBus", tags: [HealthEndpoints.ReadyTag])
-    // Bounded below the 5s probe timeout; otherwise the Azure SDK's retries make an outage take ~15s to report.
-    .AddCheck<TableStorageHealthCheck>("TableStorage", tags: [HealthEndpoints.ReadyTag], timeout: TimeSpan.FromSeconds(3));
+    .AddCheck<TableStorageHealthCheck>("TableStorage", tags: [HealthEndpoints.ReadyTag]);
 
 var managedIdentityCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
 {

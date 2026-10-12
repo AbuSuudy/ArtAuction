@@ -62,6 +62,5 @@ param containerApps = [
 param nspAssociatedResources = [
   { name: keyVaultName, resourceType: 'Microsoft.KeyVault/vaults', accessMode: 'Enforced' }
   { name: serviceBusName, resourceType: 'Microsoft.ServiceBus/namespaces', accessMode: 'Enforced' }
-  { name: logAnalyticsName, resourceType: 'Microsoft.OperationalInsights/workspaces', accessMode: 'Learning' }
   { name: storageAccountName, resourceType: 'Microsoft.Storage/storageAccounts', accessMode: 'Enforced' }
 ]

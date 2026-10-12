@@ -65,6 +65,12 @@ builder.Services.AddOpenTelemetry()
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+
+//Azure Container Apps automatically sets up a liveness probe when ingress is enabled. 
+//but wanted to create my own ones.
+
+// Images and applications take a long time to start after the image is launched can cause issues with the container.
+// Container Apps could kill the starting application because it fails the liveness probe
 builder.Services.AddHealthChecks()
     .AddCheck<StartUpHealthCheck>("Startup", tags: [HealthEndpoints.StartupTag])
     .AddCheck<LivenessHealthCheck>("Liveness", tags: [HealthEndpoints.LiveTag])

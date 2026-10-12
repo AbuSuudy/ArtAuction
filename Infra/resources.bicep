@@ -92,6 +92,8 @@ module storageAccount 'Modules/storageAccount.bicep' = {
   }
 }
 
+//user assigned idenity for container app with Keda scaling
+//https://learn.microsoft.com/en-us/azure/container-apps/scale-app?pivots=azure-cli#using-managed-identity-2
 module managedIdentities 'Modules/managedIdentities.bicep' = {
   name: 'managed-identities'
   params: {

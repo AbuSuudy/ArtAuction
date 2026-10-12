@@ -42,7 +42,10 @@ param containerApps = [
     name: 'ca-artauctionconsumer-neu-001'
     disableIngress: true
     activeRevisionsMode: 'Single'
-    minReplicas: 0
+    //Make sure you create a scale rule or set minReplicas to 1 or more if you don't enable ingress. 
+    //If ingress is disabled and you don't define a minReplicas or a custom scale rule, your container
+    //app scales to zero and has no way of starting back up.
+    minReplicas: 1
     maxReplicas: 1
     scaleQueueNames: consumerQueueNames
     env: [

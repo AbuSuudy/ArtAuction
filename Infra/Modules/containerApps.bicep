@@ -116,6 +116,10 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
       environmentResourceId: environmentResourceId
       scaleSettings: {
           minReplicas: app.minReplicas
+          //KEDA: Specifies how often KEDA should check for scaling events (defaults to 15 seconds).
+          pollingInterval: 120
+         //KEDA: Specifies the cool-down period in seconds after a scaling event (defaults to 300 seconds).
+          cooldownPeriod: 300
           maxReplicas: app.maxReplicas
           rules: [
             for queueName in app.scaleQueueNames: {

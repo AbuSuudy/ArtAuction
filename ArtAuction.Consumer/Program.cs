@@ -1,6 +1,7 @@
 using ArtAuction.Consumer;
 using ArtAuction.Consumer.Activities;
 using ArtAuction.Consumer.Endpoints;
+using ArtAuction.Consumer.Healthchecks;
 using Azure.Data.Tables;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.Exporter;
@@ -10,7 +11,11 @@ using OpenTelemetry;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHostedService<Worker>();
-builder.Services.AddHealthChecks();
+
+builder.Services.AddHealthChecks()
+.AddCheck<StartUpHealthCheck>("Startup")
+.AddCheck<ReadinessHealthCheck>("Readiness")
+.AddCheck<LivenessHealthCheck>("Liveness");
 
 var managedIdentityCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
 {

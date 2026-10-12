@@ -60,7 +60,7 @@ A review of the full solution: API, Consumer, Contract, Bicep and GitHub workflo
 - [ ] **`BidStaus.Failed` is never set.** Subscribe to routing-slip `Faulted` / `Completed` events so a bid's status reflects the real outcome.
 - [ ] **Two of the compensation handlers can never run.** Compensation only runs when a *later* activity faults, and `Aquired` and `BidRejected` are always last. Remove them or document why they're there.
 - [ ] **The compensation PartitionKey is the artwork name.** Names can contain `/ \ # ?`, which Table Storage rejects. Use `Art.Id`.
-- [ ] **The consumer creates tables inside the DI factory.** These are blocking network calls (`CreateTableIfNotExists` in `ArtAuction.Consumer/Program.cs`). Move them to a startup `IHostedService`, or create the tables in Bicep.
+- [x] **The consumer creates tables inside the DI factory.** ~Fixed: moved to the `TableInitializer` hosted service, which runs before the bus starts. It surfaced because resolving `TableServiceClient` inside the readiness check threw during a storage outage, so `/health/ready` returned 500 instead of reporting the outage. These are blocking network calls (`CreateTableIfNotExists` in `ArtAuction.Consumer/Program.cs`). Move them to a startup `IHostedService`, or create the tables in Bicep.
 - [ ] **Delete the empty `Worker.cs`** and its `AddHostedService<Worker>()` registration.
 
 ---
@@ -75,7 +75,8 @@ A review of the full solution: API, Consumer, Contract, Bicep and GitHub workflo
   - the stale `weatherforecast` request in `ArtAuction.API.http`
   - the commented-out `IsDevelopment()` check in `Program.cs`
 - [ ] **Gate Scalar/OpenAPI behind config** instead of exposing it unconditionally in production.
-- [ ] **Add health checks** (`/health/live`, `/health/ready` covering Service Bus and Storage) and wire them to Container Apps liveness/readiness probes.
+- [x] **Add health checks** (`/health/live`, `/health/ready` covering Service Bus and Storage) and wire them to Container Apps liveness/readiness probes. ~Fixed: both apps expose `/health/startup`, `/health/live` and `/health/ready`, filtered by check tag. They return 503 when Unhealthy and include only check names and statuses in the body. Readiness runs explicitly registered dependency checks only: `MessageBusHealthCheck` (`IBusControl.CheckHealth()`) in both apps, plus `TableStorageHealthCheck` (3s timeout) in the consumer. It uses the `readiness` tag, so MassTransit's auto-registered `ready` check isn't picked up implicitly. `containerApps.bicep` points the Startup/Liveness/Readiness probes at these paths.
+  - Note: the consumer has no ingress, so a failing readiness probe doesn't stop it consuming. Only liveness (restart) acts on it.
 - [ ] **`UseHttpsRedirection` does nothing behind Container Apps ingress**, which handles TLS. Make it conditional or remove it.
 
 ---

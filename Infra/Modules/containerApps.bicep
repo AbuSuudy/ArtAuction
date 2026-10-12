@@ -75,7 +75,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
           {
             type: 'Startup'
             httpGet: {
-              path: 'health/Startup'
+              path: '/health/startup'
               port: 8080
             }
             initialDelaySeconds: 0
@@ -87,7 +87,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
           {
             type: 'Liveness'
             httpGet: {
-              path: 'health/Liveness'
+              path: '/health/live'
               port: 8080
             }
             initialDelaySeconds: 10
@@ -98,7 +98,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.23.0' = [
           {
             type: 'Readiness'
             httpGet: {
-              path: 'health/Readiness'
+              path: '/health/ready'
               port: 8080
             }
             initialDelaySeconds: 5

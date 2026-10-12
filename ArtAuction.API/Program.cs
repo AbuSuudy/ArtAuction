@@ -65,9 +65,9 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddHealthChecks()
-    .AddCheck<StartUpHealthCheck>("Startup")
-    .AddCheck<ReadinessHealthCheck>("Readiness")
-    .AddCheck<LivenessHealthCheck>("Liveness");
+    .AddCheck<StartUpHealthCheck>("Startup", tags: [HealthEndpoints.StartupTag])
+    .AddCheck<LivenessHealthCheck>("Liveness", tags: [HealthEndpoints.LiveTag])
+    .AddCheck<MessageBusHealthCheck>("MessageBus", tags: [HealthEndpoints.ReadyTag]);
 
 var app = builder.Build();
 

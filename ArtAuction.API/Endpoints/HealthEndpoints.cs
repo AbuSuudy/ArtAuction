@@ -4,39 +4,53 @@ namespace ArtAuction.API.Endpoints
 {
     public static class HealthEndpoints
     {
+        public const string StartupTag = "startup";
+        public const string LiveTag = "live";
+        public const string ReadyTag = "ready";
+
         public static IEndpointRouteBuilder MapHealthEndpoints(this IEndpointRouteBuilder routes)
         {
-            var group = routes.MapGroup("Health")
+            var group = routes.MapGroup("health")
                 .WithTags("Health");
 
-            group.MapGet("/Startup", 
+            group.MapGet("/startup",
                 (HealthCheckService healthCheckService, CancellationToken ct) =>
-                    CheckHealth(healthCheckService, "Startup", ct))
+                    CheckHealth(healthCheckService, StartupTag, ct))
                 .WithSummary("Startup probe")
                 .WithDescription("Reports whether the app has finished starting up.");
 
-            group.MapGet("/Liveness", 
+            group.MapGet("/live",
                 (HealthCheckService healthCheckService, CancellationToken ct) =>
-                    CheckHealth(healthCheckService, "Liveness", ct))
+                    CheckHealth(healthCheckService, LiveTag, ct))
                 .WithSummary("Liveness probe")
                 .WithDescription("Reports whether the app is still running correctly.");
 
-            group.MapGet("/Readiness", 
+            group.MapGet("/ready",
                 (HealthCheckService healthCheckService, CancellationToken ct) =>
-                    CheckHealth(healthCheckService, "Readiness", ct))
+                    CheckHealth(healthCheckService, ReadyTag, ct))
                 .WithSummary("Readiness probe")
-                .WithDescription("Reports whether the app is ready to receive traffic.");
+                .WithDescription("Reports whether the app's dependencies are reachable.");
 
             return routes;
         }
 
-        private static async Task<IResult> CheckHealth(HealthCheckService healthCheckService, string HealthCheckType, CancellationToken cancellationToken = default)
+        private static async Task<IResult> CheckHealth(HealthCheckService healthCheckService, string tag, CancellationToken cancellationToken = default)
         {
             var report = await healthCheckService.CheckHealthAsync(
-              registration => registration.Name.Contains(HealthCheckType),
-              cancellationToken);
+                registration => registration.Tags.Contains(tag),
+                cancellationToken);
 
-            return Results.Ok(report);
+            var body = new
+            {
+                Status = report.Status.ToString(),
+                Checks = report.Entries.ToDictionary(e => e.Key, e => e.Value.Status.ToString())
+            };
+
+            var statusCode = report.Status == HealthStatus.Unhealthy
+                ? StatusCodes.Status503ServiceUnavailable
+                : StatusCodes.Status200OK;
+
+            return Results.Json(body, statusCode: statusCode);
         }
     }
 }

@@ -16,7 +16,7 @@ namespace ArtAuction.Consumer.Activities
         public ArtWorkBid ArtWorkBid { get; init; }
     }
 
-    public class BidAcceptedActivity(TableServiceClient client) : IActivity<BidAcceptedArguments, BidAcceptedLog>
+    public class BidAcceptedActivity(TableServiceClient client, ILogger<BidAcceptedActivity> logger) : IActivity<BidAcceptedArguments, BidAcceptedLog>
 
     {
         public async Task<CompensationResult> Compensate(CompensateContext<BidAcceptedLog> context)
@@ -30,7 +30,7 @@ namespace ArtAuction.Consumer.Activities
                 BidCompensationStaus = BidCompensationStaus.BidAccepted_Compensated
             });
 
-            Console.WriteLine("Bid Accepted Compensared");
+            logger.LogInformation("Bid Accepted Compensared");
 
             return context.Compensated();
         }
@@ -38,7 +38,7 @@ namespace ArtAuction.Consumer.Activities
         async Task<ExecutionResult> IExecuteActivity<BidAcceptedArguments>.Execute(ExecuteContext<BidAcceptedArguments> context)
         {
 
-            Console.WriteLine($"Accepted - Id : {context.Arguments.Id} Bid: {context.Arguments.Bid} Price: {context.Arguments.Art.Price}");
+            logger.LogInformation($"Accepted - Id : {context.Arguments.Id} Bid: {context.Arguments.Bid} Price: {context.Arguments.Art.Price}");
 
             var tableClient = client.GetTableClient("BidStatus");
 

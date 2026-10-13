@@ -4,7 +4,8 @@
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "OTEL_SERVICE_NAME": "ca-artauctionapi-neu-001"
+        "OTEL_SERVICE_NAME": "ca-artauctionapi-neu-001",
+        "DisableAuthForLocalDev": "true"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5295"
@@ -15,7 +16,8 @@
       "launchUrl": "scalar",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "OTEL_SERVICE_NAME": "ca-artauctionapi-neu-001"
+        "OTEL_SERVICE_NAME": "ca-artauctionapi-neu-001",
+        "DisableAuthForLocalDev": "true"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7279/;http://localhost:5295"
@@ -24,7 +26,8 @@
       "commandName": "IISExpress",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DisableAuthForLocalDev": "true"
       }
     },
     "Container (Dockerfile)": {

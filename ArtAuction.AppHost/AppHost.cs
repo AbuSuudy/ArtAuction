@@ -1,7 +1,5 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var rabbitmq = builder.AddRabbitMQ("rabbit-mq").WithManagementPlugin();
-
 var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(azurite =>
     {
@@ -10,6 +8,8 @@ var storage = builder.AddAzureStorage("storage")
     });
 
 var tables = storage.AddTables("tables");
+
+var rabbitmq = builder.AddRabbitMQ("rabbit-mq").WithManagementPlugin();
 
 var api = builder.AddProject<Projects.ArtAuction_Api>("api")
     .WithReference(rabbitmq)

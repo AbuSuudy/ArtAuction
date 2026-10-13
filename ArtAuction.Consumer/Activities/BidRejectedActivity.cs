@@ -16,7 +16,7 @@ namespace ArtAuction.Consumer.Activities
         public ArtWorkBid ArtWorkBid { get; init; }
     }
 
-    public class BidRejectedActivity(TableServiceClient client) : IActivity<BidRejectedArguments, BidRejectedLog>
+    public class BidRejectedActivity(TableServiceClient client, ILogger<BidRejectedActivity> logger) : IActivity<BidRejectedArguments, BidRejectedLog>
     {
         public async Task<CompensationResult> Compensate(CompensateContext<BidRejectedLog> context)
         {
@@ -29,14 +29,14 @@ namespace ArtAuction.Consumer.Activities
                 BidCompensationStaus = BidCompensationStaus.BidRejected_Compensated
             });
 
-            Console.WriteLine("Bid Rejected Compensared");
+            logger.LogInformation("Bid Rejected Compensared");
 
             return context.Compensated();
         }
 
         async Task<ExecutionResult> IExecuteActivity<BidRejectedArguments>.Execute(ExecuteContext<BidRejectedArguments> context)
         {
-            Console.WriteLine($"Rejected - Id : {context.Arguments.Id} Bid: {context.Arguments.Bid} Price: {context.Arguments.Art.Price}");
+            logger.LogInformation($"Rejected - Id : {context.Arguments.Id} Bid: {context.Arguments.Bid} Price: {context.Arguments.Art.Price}");
 
             var tableClient = client.GetTableClient("BidStatus");
 

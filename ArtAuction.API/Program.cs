@@ -12,6 +12,8 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var disableAuthForLocalDev = builder.Configuration.GetValue<bool>("DisableAuthForLocalDev");
+
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
@@ -85,11 +87,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
+
+if (!disableAuthForLocalDev)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
+
 app.UseExceptionHandler();
 
 app.MapHealthEndpoints();
-app.MapBidEndpoints();
+app.MapBidEndpoints(builder.Configuration);
 
 app.Run();

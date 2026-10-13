@@ -22,7 +22,7 @@ namespace ArtAuction.API.Endpoints
             }
         ];
 
-        public static IEndpointRouteBuilder MapBidEndpoints(this IEndpointRouteBuilder routes)
+        public static IEndpointRouteBuilder MapBidEndpoints(this IEndpointRouteBuilder routes, IConfiguration configuration)
         {
             var group = routes.MapGroup("api/Bid")
                 .WithTags("Bid");
@@ -49,8 +49,12 @@ namespace ArtAuction.API.Endpoints
                 return TypedResults.Accepted((string?)null, artWorkBid);
             });*/
 
-            group.MapPost("SubmitBid", SubmitBid)
-                .RequireAuthorization(AuthorizationPolicies.SubmitBid);
+            var submitBid = group.MapPost("SubmitBid", SubmitBid);
+
+            if (!configuration.GetValue<bool>("DisableAuthForLocalDev"))
+            {
+                submitBid.RequireAuthorization(AuthorizationPolicies.SubmitBid);
+            }
 
             return routes;
         }

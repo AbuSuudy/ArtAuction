@@ -4,11 +4,11 @@ using MassTransit;
 
 namespace ArtAuction.Consumer
 {
-    internal class ArtWorkBidConsumer(TableServiceClient tableServiceClient) : IConsumer<ArtWorkBid>
+    internal class ArtWorkBidConsumer(TableServiceClient tableServiceClient, ILogger<ArtWorkBidConsumer> logger) : IConsumer<ArtWorkBid>
     {
         public async Task Consume(ConsumeContext<ArtWorkBid> context)
         {
-            Console.WriteLine($"Bid Submitted - Id : {context.Message.Id} Bid: {context.Message.Bid} Price: {context.Message.Art.Price}");
+            logger.LogInformation($"Bid Submitted - Id : {context.Message.Id} Bid: {context.Message.Bid} Price: {context.Message.Art.Price}");
 
             var tableClient = tableServiceClient.GetTableClient("BidStatus");
 

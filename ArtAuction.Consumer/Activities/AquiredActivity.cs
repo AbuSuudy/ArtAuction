@@ -16,7 +16,7 @@ namespace ArtAuction.Consumer.Activities
         public ArtWorkBid ArtWorkBid { get; init; }
     }
 
-    public class AquiredActivity(TableServiceClient client) : IActivity<AquiredArguments, AquiredLog>
+    public class AquiredActivity(TableServiceClient client, ILogger<AquiredActivity> logger) : IActivity<AquiredArguments, AquiredLog>
     {
         public async Task<CompensationResult> Compensate(CompensateContext<AquiredLog> context)
         {
@@ -29,7 +29,7 @@ namespace ArtAuction.Consumer.Activities
                 BidCompensationStaus = BidCompensationStaus.Aquired_Compensated
             });
 
-            Console.WriteLine("Aquired Compensared");
+            logger.LogInformation("Aquired Compensared");
 
             return context.Compensated();
         }
@@ -37,7 +37,7 @@ namespace ArtAuction.Consumer.Activities
         async Task<ExecutionResult> IExecuteActivity<AquiredArguments>.Execute(ExecuteContext<AquiredArguments> context)
         {
 
-            Console.WriteLine($"Aquired - Id : {context.Arguments.Id} Bid: {context.Arguments.Bid} Price: {context.Arguments.Art.Price}");
+            logger.LogInformation($"Aquired - Id : {context.Arguments.Id} Bid: {context.Arguments.Bid} Price: {context.Arguments.Art.Price}");
 
             var tableClient = client.GetTableClient("BidStatus");
 

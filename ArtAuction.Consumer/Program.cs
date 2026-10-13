@@ -49,6 +49,8 @@ builder.Services.AddMassTransit(x =>
     {
         x.UsingRabbitMq((context, cfg) =>
         {
+            MassTransitConfig.ConfigureRoutingSlipEndpoints(context, cfg);
+
             cfg.Host(new Uri(rabbitMQConnectionString));
 
             cfg.ConfigureEndpoints(context);
@@ -58,6 +60,8 @@ builder.Services.AddMassTransit(x =>
     {
         x.UsingAzureServiceBus((context, cfg) =>
         {
+            MassTransitConfig.ConfigureRoutingSlipEndpoints(context, cfg);
+
             cfg.Host(new Uri(builder.Configuration["ServiceBus:Host"]!), h =>
             {
                 h.TokenCredential = managedIdentityCredential;

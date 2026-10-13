@@ -26,13 +26,13 @@ namespace ArtAuction.Consumer
 
             if (context.Message.Bid >= context.Message.Art.Price * 0.8m)
             {
-                builder.AddActivity("BidAccepted", new Uri("queue:bidaccepted_execute"), context.Message);
+                builder.AddActivity("BidAccepted", new Uri($"queue:{QueueNames.BidAcceptedExecute}"), context.Message);
 
-                builder.AddActivity("Aquired", new Uri("queue:aquired_execute"), context.Message);
+                builder.AddActivity("Aquired", new Uri($"queue:{QueueNames.AquiredExecute}"), context.Message);
             }
             else
             {
-                builder.AddActivity("BidRejected", new Uri("queue:bidrejected_execute"), context.Message);
+                builder.AddActivity("BidRejected", new Uri($"queue:{QueueNames.BidRejectedExecute}"), context.Message);
             }
 
             var routingSlipBuild = builder.Build();

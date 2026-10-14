@@ -1,5 +1,8 @@
 <Solution>
-  <Folder Name="/GitHub Actions/">
+  <Folder Name="/.devcontainer/">
+    <File Path=".devcontainer/devcontainer.json" />
+  </Folder>
+  <Folder Name="/.github/">
     <File Path=".github/workflows/api-container.yml" />
     <File Path=".github/workflows/infra.yml" />
     <File Path=".github/workflows/worker-container.yml" />

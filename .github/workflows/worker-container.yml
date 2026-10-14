@@ -34,6 +34,10 @@ on:
       - "ArtAuction.Consumer/**"
       - "ArtAuction.Contract/**"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build_and_deploy_container:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build_and_deploy_container')
@@ -47,21 +51,22 @@ jobs:
             imageName: ca-artauctionconsumer-neu-001
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Log in to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to ACR
+        run: az acr login --name "${REGISTRY%%.*}"
+        env:
+          REGISTRY: ${{ vars.REGISTRY_LOGIN_SERVER }}
 
       - name: Build Container and push to ACR
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ vars.REGISTRY_LOGIN_SERVER }}
-          username: ${{ vars.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
-      - run: |
+        run: |
           docker build \
             -f ${{ matrix.app.dockerfile }} \
             -t ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }} \
@@ -91,9 +96,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - name: Update revison only single revision should be active
         shell: bash
         run: |

@@ -111,8 +111,7 @@ A review of the full solution: API, Consumer, Contract, Bicep and GitHub workflo
 
 ## Phase 6: CI/CD
 
-- [ ] **Switch to OIDC federated credentials** (`azure/login@v2` + `permissions: id-token: write`) instead of the `AZURE_CREDENTIALS` client-secret JSON and ACR admin username/password.
-  - Then disable the ACR admin user (`Infra/Modules/containerRegistry.bicep:9`) and push using `az acr login`.
+- [x] **Switch to OIDC federated credentials** (`azure/login@v2` + `permissions: id-token: write`) instead of the `AZURE_CREDENTIALS` client-secret JSON and ACR admin username/password. ~Fixed: all three workflows sign in as the `Art-Auction-Github-Deployment` app registration through a federated credential (`repo:AbuSuudy/ArtAuction:ref:refs/heads/main`), using the `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` repo variables. Images are pushed after `az acr login`, and the ACR admin user is disabled (the explicit `acrAdminUserEnabled` was removed from `containerRegistry.bicep`, so the AVM default of `false` applies). The old `AZURE_CREDENTIALS` / `REGISTRY_PASSWORD` secrets have been deleted. The deployment identity has Contributor plus Role Based Access Control Administrator, conditioned to the three roles the Bicep assigns, instead of Owner.
 - [ ] **Fix the script-injection risk.** `${{ github.event.inputs.revision_name }}` is placed directly into a shell script (`.github/workflows/api-container.yml:176`, and likewise in `worker-container.yml`). Pass inputs through `env:` and reference them as `"$REVISION_NAME"`.
 - [ ] **Add a PR workflow:** `dotnet build`, `dotnet test`, `az bicep lint`, and a `what-if` on the deployment stack. Today nothing builds or tests before deploying.
 - [ ] **Bump actions** (`actions/checkout@v4`, `azure/login@v2`).

@@ -8,18 +8,24 @@ on:
     paths:
       - "Infra/**"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy Bicep
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Log in to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Resolve currently running container images
         id: images
@@ -60,7 +66,7 @@ jobs:
           name: Development-RG-ARTAUCTION-NEU-001
           location: northeurope
           scope: subscription
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           template-file: Infra/main.bicep
           parameters-file: Infra/Params/main.bicepparam
           parameters: |

@@ -11,7 +11,7 @@ var tables = storage.AddTables("tables");
 
 var rabbitmq = builder.AddRabbitMQ("rabbit-mq").WithManagementPlugin();
 
-var api = builder.AddProject<Projects.ArtAuction_Api>("api")
+var api = builder.AddProject<Projects.ArtAuction_API>("api")
     .WithReference(rabbitmq)
     .PublishAsDockerFile();
 

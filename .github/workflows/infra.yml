@@ -24,7 +24,6 @@ jobs:
 
   resolve-images:
     name: Resolve Current Container Images
-    needs: lint
     runs-on: ubuntu-latest
     outputs:
       overrides: ${{ steps.images.outputs.overrides }}
@@ -102,7 +101,7 @@ jobs:
 
   what-if:
     name: What-If Against Deployment Stack
-    needs: [resolve-images, validate]
+    needs: resolve-images
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -129,7 +128,7 @@ jobs:
 
   deploy:
     name: Deploy Infrastructure
-    needs: [resolve-images, what-if]
+    needs: [lint, resolve-images, validate, what-if]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

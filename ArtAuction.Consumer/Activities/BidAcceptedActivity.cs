@@ -7,13 +7,13 @@ namespace ArtAuction.Consumer.Activities
     public class BidAcceptedArguments
     {
         public Guid Id { get; set; }
-        public Art Art { get; set; }
+        public required Art Art { get; set; }
         public decimal Bid { get; set; }
     }
 
     public class BidAcceptedLog
     {
-        public ArtWorkBid ArtWorkBid { get; init; }
+        public required ArtWorkBid ArtWorkBid { get; init; }
     }
 
     public class BidAcceptedActivity(TableServiceClient client, ILogger<BidAcceptedActivity> logger) : IActivity<BidAcceptedArguments, BidAcceptedLog>

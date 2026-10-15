@@ -14,13 +14,6 @@ namespace ArtAuction.Contract
 
     public record BidEntity : ITableEntity
     {
-        public BidEntity(string partitionKey, string rowKey)
-        {
-            PartitionKey = partitionKey;
-            RowKey = rowKey;
-        }
-
-        public BidEntity() { }
 
         public Guid Id { get; set; }
         public decimal Price { get; set; }
@@ -29,8 +22,8 @@ namespace ArtAuction.Contract
         // store in pence
         public long Bid { get; set; }
         public BidStaus BidStaus { get; set; }
-        public string PartitionKey { get; set; }
-        public string RowKey { get; set; }
+        public required string PartitionKey { get; set; }
+        public required  string RowKey { get; set; }
         public DateTimeOffset? Timestamp { get; set; }
         public ETag ETag { get; set; }
     }
@@ -55,8 +48,8 @@ namespace ArtAuction.Contract
         // store in pence
         public long Bid { get; set; }
         public BidCompensationStaus BidCompensationStaus { get; set; }
-        public string PartitionKey { get; set; }
-        public string RowKey { get; set; }
+        public string PartitionKey { get; set; } = string.Empty;
+        public string RowKey { get; set; } = string.Empty;
         public DateTimeOffset? Timestamp { get; set; }
         public ETag ETag { get; set; }
     }

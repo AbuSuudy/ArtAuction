@@ -12,14 +12,16 @@ namespace ArtAuction.Consumer
 
             var tableClient = tableServiceClient.GetTableClient("BidStatus");
 
-            await tableClient.AddEntityAsync(new BidEntity(context.Message.Art.Id.ToString(), context.Message.Id.ToString())
+            await tableClient.AddEntityAsync(new BidEntity()
             {
                 Price = context.Message.Art.Price,
                 Name = context.Message.Art.Name,
                 ArtWork = context.Message.Art.ArtWork,
                 Bid = (long)(context.Message.Bid * 100),
                 Id = context.Message.Id,
-                BidStaus = BidStaus.Submited
+                BidStaus = BidStaus.Submited,
+                PartitionKey = context.Message.Art.Id.ToString(),
+                RowKey = context.Message.Id.ToString(), 
             });
 
             var builder = new RoutingSlipBuilder(NewId.NextGuid());

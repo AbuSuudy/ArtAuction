@@ -25,7 +25,7 @@ namespace ArtAuction.API
                 document.Components ??= new OpenApiComponents();
                 document.Components.SecuritySchemes = securitySchemes;
 
-                foreach (var operation in document.Paths.Values.SelectMany(path => path.Operations))
+                foreach (var operation in document.Paths.Values.SelectMany(path => path.Operations ?? []))
                 {
                     var isHealthCheck = operation.Value.Tags?.Any(tag => tag.Name == "Health") ?? false;
 

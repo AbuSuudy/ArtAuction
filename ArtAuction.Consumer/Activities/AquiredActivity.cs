@@ -7,13 +7,13 @@ namespace ArtAuction.Consumer.Activities
     public class AquiredArguments
     {
         public Guid Id { get; set; }
-        public Art Art { get; set; }
+        public required Art Art { get; set; }
         public decimal Bid { get; set; }
     }
 
     public class AquiredLog
     {
-        public ArtWorkBid ArtWorkBid { get; init; }
+        public required ArtWorkBid ArtWorkBid { get; init; }
     }
 
     public class AquiredActivity(TableServiceClient client, ILogger<AquiredActivity> logger) : IActivity<AquiredArguments, AquiredLog>

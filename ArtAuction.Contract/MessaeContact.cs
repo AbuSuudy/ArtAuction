@@ -14,7 +14,7 @@
     public record ArtWorkBid
     {
         public Guid Id { get; set; }
-        public Art Art { get; set; }
+        public required Art Art { get; set; }
         public decimal Bid { get; set; }
     }
 }

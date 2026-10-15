@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   validate:
-    name: Build & Test .NET Solution
+    name: .NET Build & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
         run: dotnet test ArtAuction.slnx --no-build --configuration Release
 
   build:
-    name: Build & Push Container Image
+    name: Container Build & Push
     needs: validate
     runs-on: ubuntu-latest
     outputs:

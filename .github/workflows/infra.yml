@@ -24,6 +24,7 @@ jobs:
 
   resolve-images:
     name: Resolve Current Container Images
+    needs: lint
     runs-on: ubuntu-latest
     outputs:
       overrides: ${{ steps.images.outputs.overrides }}

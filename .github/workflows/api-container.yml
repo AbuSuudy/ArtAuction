@@ -47,7 +47,7 @@ jobs:
       image-name: ca-artauctionapi-neu-001
 
   deploy:
-    name: Deploy to Inactive Revision & Smoke Test
+    name: Deploy Inactive Revision
     needs: build
     runs-on: ubuntu-latest
 

@@ -37,19 +37,13 @@ namespace ArtAuction.Contract
 
     public record BidCompensationEntity : ITableEntity
     {
-        public BidCompensationEntity(string partitionKey, string rowKey)
-        {
-            PartitionKey = partitionKey;
-            RowKey = rowKey;
-        }
-        public BidCompensationEntity() { }
 
         public Guid Id { get; set; }
         // store in pence
         public long Bid { get; set; }
         public BidCompensationStaus BidCompensationStaus { get; set; }
-        public string PartitionKey { get; set; } = string.Empty;
-        public string RowKey { get; set; } = string.Empty;
+        public required string PartitionKey { get; set; }
+        public required string RowKey { get; set; }
         public DateTimeOffset? Timestamp { get; set; }
         public ETag ETag { get; set; }
     }

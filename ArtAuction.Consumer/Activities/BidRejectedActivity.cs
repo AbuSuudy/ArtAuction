@@ -22,11 +22,13 @@ namespace ArtAuction.Consumer.Activities
         {
             var tableclient = client.GetTableClient("BidCompensation");
 
-            await tableclient.AddEntityAsync(new BidCompensationEntity(context.Log.ArtWorkBid.Art.Name, context.Log.ArtWorkBid.Id.ToString())
+            await tableclient.AddEntityAsync(new BidCompensationEntity()
             {
                 Bid = (long)(context.Log.ArtWorkBid.Bid * 100),
                 Id = context.Log.ArtWorkBid.Id,
-                BidCompensationStaus = BidCompensationStaus.BidRejected_Compensated
+                BidCompensationStaus = BidCompensationStaus.BidRejected_Compensated,
+                PartitionKey = context.Log.ArtWorkBid.Art.Name,
+                RowKey = context.Log.ArtWorkBid.Id.ToString()
             });
 
             logger.LogInformation("Bid Rejected Compensared");

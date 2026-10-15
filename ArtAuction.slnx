@@ -33,6 +33,9 @@
   <Folder Name="/Infra/Types/">
     <File Path="Infra/Types/types.bicep" />
   </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+  </Folder>
   <Project Path="ArtAuction.API/ArtAuction.API.csproj" />
   <Project Path="ArtAuction.AppHost/ArtAuction.AppHost.csproj" />
   <Project Path="ArtAuction.Consumer/ArtAuction.Consumer.csproj" />

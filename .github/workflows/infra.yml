@@ -15,10 +15,13 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy Bicep
+    name: Lint, Validate, What-If & Deploy Infrastructure
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Lint Bicep templates
+        run: az bicep lint --file Infra/main.bicep
 
       - name: Log in to Azure
         uses: azure/login@v2
@@ -57,6 +60,40 @@ jobs:
           done
 
           echo "overrides=$overrides" >> "$GITHUB_OUTPUT"
+
+      - name: Validate Bicep deployment
+        uses: azure/bicep-deploy@v2
+        with:
+          type: deploymentStack
+          operation: validate
+          name: Development-RG-ARTAUCTION-NEU-001
+          location: northeurope
+          scope: subscription
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          template-file: Infra/main.bicep
+          parameters-file: Infra/Params/main.bicepparam
+          parameters: |
+            imageOverrides: ${{ steps.images.outputs.overrides }}
+          action-on-unmanage-resources: delete
+          action-on-unmanage-resourcegroups: delete
+          deny-settings-mode: none
+
+      - name: What-if against the deployment stack
+        uses: azure/bicep-deploy@v2
+        with:
+          type: deploymentStack
+          operation: whatIf
+          name: Development-RG-ARTAUCTION-NEU-001
+          location: northeurope
+          scope: subscription
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          template-file: Infra/main.bicep
+          parameters-file: Infra/Params/main.bicepparam
+          parameters: |
+            imageOverrides: ${{ steps.images.outputs.overrides }}
+          action-on-unmanage-resources: delete
+          action-on-unmanage-resourcegroups: delete
+          deny-settings-mode: none
 
       - name: Bicep Deployment
         uses: azure/bicep-deploy@v2

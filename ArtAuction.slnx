@@ -7,6 +7,9 @@
     <File Path=".github/workflows/infra.yml" />
     <File Path=".github/workflows/worker-container.yml" />
   </Folder>
+  <Folder Name="/.github/Template/">
+    <File Path=".github/workflows/build-and-push.yml" />
+  </Folder>
   <Folder Name="/Infra/">
     <File Path="Infra/main.bicep" />
     <File Path="Infra/resources.bicep" />

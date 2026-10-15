@@ -4,6 +4,7 @@ using ArtAuction.API.HealthChecks;
 using ArtAuction.API.HealthChecks.Readiness;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using FluentValidation;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
@@ -63,6 +64,8 @@ builder.Services.AddOpenTelemetry()
 .UseOtlpExporter()
 .WithTracing(tracing => tracing.AddSource("MassTransit"))
 .WithMetrics(metrics => metrics.AddMeter("MassTransit"));
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();

@@ -1,3 +1,4 @@
+using ArtAuction.API.Validation;
 using ArtAuction.Contract;
 using MassTransit;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -49,7 +50,8 @@ namespace ArtAuction.API.Endpoints
                 return TypedResults.Accepted((string?)null, artWorkBid);
             });*/
 
-            var submitBid = group.MapPost("SubmitBid", SubmitBid);
+            var submitBid = group.MapPost("SubmitBid", SubmitBid)
+                .AddEndpointFilter<ValidationFilter<SubmitBidRequest>>();
 
             if (!configuration.GetValue<bool>("DisableAuthForLocalDev"))
             {
@@ -59,9 +61,9 @@ namespace ArtAuction.API.Endpoints
             return routes;
         }
 
-        private static async Task<Results<Accepted<ArtWorkBid>, NotFound<string>>> SubmitBid(int id, decimal bid, IBus bus)
+        private static async Task<Results<Accepted<ArtWorkBid>, NotFound<string>, ValidationProblem>> SubmitBid(SubmitBidRequest request, IBus bus)
         {
-            var artwork = ArtCollecetion.FirstOrDefault(x => x.Id == id);
+            var artwork = ArtCollecetion.FirstOrDefault(x => x.Id == request.Id);
 
             if (artwork is null)
             {
@@ -72,7 +74,7 @@ namespace ArtAuction.API.Endpoints
             {
                 Id = Guid.NewGuid(),
                 Art = artwork,
-                Bid = bid
+                Bid = request.Bid
             };
 
             await bus.Publish<ArtWorkBid>(artWorkBid);

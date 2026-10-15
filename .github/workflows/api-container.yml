@@ -21,12 +21,12 @@ on:
           - ""
           - ca-artauctionapi-neu-001
 
-      revision_name: 
+      revision_name:
         description: "Revision to send 100% traffic to"
         required: false
         default: ""
         type: string
-        
+
   push:
     branches:
       - main
@@ -39,20 +39,20 @@ permissions:
   contents: read
 
 jobs:
-  build_and_deploy_container:
+  build:
+    name: Build & Push API Image Container Registry
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build_and_deploy_container')
+    uses: ./.github/workflows/build-and-push.yml
+    with:
+      dockerfile: ArtAuction.API/Dockerfile
+      image-name: ca-artauctionapi-neu-001
+
+  deploy:
+    name: Deploy to Inactive Revision & Smoke Test
+    needs: build
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        app:
-          - dockerfile: ArtAuction.API/Dockerfile
-            containerAppName: ca-artauctionapi-neu-001
-            imageName: ca-artauctionapi-neu-001
-
     steps:
-      - uses: actions/checkout@v4
-
       - name: Log in to Azure
         uses: azure/login@v2
         with:
@@ -60,29 +60,14 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Log in to ACR
-        run: az acr login --name "${REGISTRY%%.*}"
-        env:
-          REGISTRY: ${{ vars.REGISTRY_LOGIN_SERVER }}
-
-      - name: Build Container and push to ACR
-        run: |
-          docker build \
-            -f ${{ matrix.app.dockerfile }} \
-            -t ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }} \
-            .
-
-          docker push \
-            ${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}
-
-      - name: Deploy API Container to inactive revision
+      - name: Deploy API container to inactive revision
         shell: bash
+        env:
+          APP_NAME: ca-artauctionapi-neu-001
+          RG: ${{ vars.RESOURCE_GROUP }}
+          IMAGE: ${{ needs.build.outputs.image }}
         run: |
             set -euo pipefail
-
-            APP_NAME="${{ matrix.app.containerAppName }}"
-            RG="${{ vars.RESOURCE_GROUP }}"
-            IMAGE="${{ vars.REGISTRY_LOGIN_SERVER }}/${{ matrix.app.imageName }}:${{ github.sha }}"
 
             current_live=$(az containerapp revision list \
                 --name "$APP_NAME" \
@@ -91,7 +76,7 @@ jobs:
                 -o tsv)
 
             #keep traffic to existing container
-            if [[ "$current_live" == *sha* ]]; then          
+            if [[ "$current_live" == *sha* ]]; then
                 az containerapp ingress traffic set \
                     --name "$APP_NAME" \
                     --resource-group "$RG" \
@@ -106,6 +91,51 @@ jobs:
               --revision-suffix "sha-${GITHUB_SHA::7}" \
               --query "properties.latestRevisionName" \
               -o tsv)
+
+            echo "latest_revision_name=$latest_revision_name" >> "$GITHUB_ENV"
+
+      - name: Smoke test new revision before it can receive traffic
+        shell: bash
+        env:
+          APP_NAME: ca-artauctionapi-neu-001
+          RG: ${{ vars.RESOURCE_GROUP }}
+        run: |
+            set -euo pipefail
+
+            revision_fqdn=$(az containerapp revision show \
+                --name "$APP_NAME" \
+                --resource-group "$RG" \
+                --revision "$latest_revision_name" \
+                --query "properties.fqdn" \
+                -o tsv)
+
+            if [[ -z "$revision_fqdn" ]]; then
+                echo "Revision $latest_revision_name has no per-revision FQDN; cannot smoke test." >&2
+                exit 1
+            fi
+
+            url="https://$revision_fqdn/health/ready"
+            echo "Smoke testing $url"
+
+            for attempt in $(seq 1 10); do
+                if curl -fsS --max-time 5 "$url" > /dev/null; then
+                    echo "Smoke test passed on attempt $attempt."
+                    exit 0
+                fi
+                echo "Attempt $attempt failed, retrying in 5s..."
+                sleep 5
+            done
+
+            echo "Smoke test against $url did not succeed after 10 attempts." >&2
+            exit 1
+
+      - name: Label revision and retire old ones
+        shell: bash
+        env:
+          APP_NAME: ca-artauctionapi-neu-001
+          RG: ${{ vars.RESOURCE_GROUP }}
+        run: |
+            set -euo pipefail
 
             blue_weight=$(az containerapp show \
                 --name "$APP_NAME" \
@@ -165,6 +195,7 @@ jobs:
             done
 
   switch_traffic:
+    name: Switch Traffic to Revision
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'switch_traffic' && github.event.inputs.app_name != '' && github.event.inputs.revision_name != ''
     runs-on: ubuntu-latest
     steps:
@@ -176,12 +207,12 @@ jobs:
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - name: Promote selected revision to 100% traffic
         shell: bash
+        env:
+          APP_NAME: ${{ github.event.inputs.app_name }}
+          REVISION_NAME: ${{ github.event.inputs.revision_name }}
+          RG: ${{ vars.RESOURCE_GROUP }}
         run: |
             set -euo pipefail
-
-            APP_NAME="${{ github.event.inputs.app_name }}"
-            REVISION_NAME="${{ github.event.inputs.revision_name }}"
-            RG="${{ vars.RESOURCE_GROUP }}"
 
             blue_weight=$(az containerapp show -n "$APP_NAME" -g "$RG" \
             --query "properties.configuration.ingress.traffic[?label=='blue'].weight | [0]" -o tsv)

@@ -40,7 +40,6 @@ permissions:
 
 jobs:
   build:
-    name: Build & Push API Image Container Registry
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build_and_deploy_container')
     uses: ./.github/workflows/_build-and-push.yml
     with:

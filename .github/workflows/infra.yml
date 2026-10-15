@@ -13,15 +13,23 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  lint:
+    name: Lint Bicep
     runs-on: ubuntu-latest
-    name: Lint, Validate, What-If & Deploy Infrastructure
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Lint Bicep templates
         run: az bicep lint --file Infra/main.bicep
+
+  resolve-images:
+    name: Resolve Current Container Images
+    needs: lint
+    runs-on: ubuntu-latest
+    outputs:
+      overrides: ${{ steps.images.outputs.overrides }}
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Log in to Azure
         uses: azure/login@v2
@@ -39,7 +47,7 @@ jobs:
           apps=(ca-artauctionapi-neu-001 ca-artauctionconsumer-neu-001)
 
           overrides="{}"
-          #2>/dev/null 
+          #2>/dev/null
           #discard any error messages from the az CLI, so we can continue to deploy even if the apps don't exist yet.
           #2 = standard error (stderr) — where programs normally send error messages.
           #> = redirect output somewhere else.
@@ -61,6 +69,20 @@ jobs:
 
           echo "overrides=$overrides" >> "$GITHUB_OUTPUT"
 
+  validate:
+    name: Validate Bicep Deployment
+    needs: resolve-images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
       - name: Validate Bicep deployment
         uses: azure/bicep-deploy@v2
         with:
@@ -73,10 +95,24 @@ jobs:
           template-file: Infra/main.bicep
           parameters-file: Infra/Params/main.bicepparam
           parameters: |
-            imageOverrides: ${{ steps.images.outputs.overrides }}
+            imageOverrides: ${{ needs.resolve-images.outputs.overrides }}
           action-on-unmanage-resources: delete
           action-on-unmanage-resourcegroups: delete
           deny-settings-mode: none
+
+  what-if:
+    name: What-If Against Deployment Stack
+    needs: [resolve-images, validate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: What-if against the deployment stack
         uses: azure/bicep-deploy@v2
@@ -91,6 +127,20 @@ jobs:
           parameters-file: Infra/Params/main.bicepparam
           validation-level: provider
 
+  deploy:
+    name: Deploy Infrastructure
+    needs: [resolve-images, what-if]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
       - name: Bicep Deployment
         uses: azure/bicep-deploy@v2
         with:
@@ -103,7 +153,7 @@ jobs:
           template-file: Infra/main.bicep
           parameters-file: Infra/Params/main.bicepparam
           parameters: |
-            imageOverrides: ${{ steps.images.outputs.overrides }}
+            imageOverrides: ${{ needs.resolve-images.outputs.overrides }}
           action-on-unmanage-resources: delete
           action-on-unmanage-resourcegroups: delete
           deny-settings-mode: none

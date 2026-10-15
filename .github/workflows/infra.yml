@@ -63,6 +63,7 @@ jobs:
             # placeholder image, so the Bicep default takes over.
             if [[ -n "$image" && "$image" != *k8se/quickstart* ]]; then
               overrides=$(jq --arg k "$app" --arg v "$image" '. + {($k): $v}' <<< "$overrides")
+              overrides=$(jq -c --arg k "$app" --arg v "$image" '. + {($k): $v}' <<< "$overrides")
             fi
           done
 

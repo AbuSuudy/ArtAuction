@@ -3,6 +3,21 @@
 **Application & message flow** — `ArtAuction.API` accepts a bid and publishes `ArtWorkBid` onto Service Bus. `ArtAuction.Consumer` consumes it, records the bid in Table Storage, then drives a MassTransit routing slip through courier activities to accept or reject the bid. If a later activity in the slip faults, MassTransit walks back through the already-executed activities' `Compensate` methods, each of which writes a `*_Compensated` status back to Table Storage.
 
 ```mermaid
+%%{init: {
+  "theme": "dark",
+  "themeVariables": {
+    "darkMode": true,
+    "background": "transparent",
+    "primaryColor": "#1f2937",
+    "primaryTextColor": "#e5e7eb",
+    "primaryBorderColor": "#4b5563",
+    "lineColor": "#9ca3af",
+    "secondaryColor": "#111827",
+    "tertiaryColor": "#111827",
+    "edgeLabelBackground": "transparent",
+    "fontSize": "14px"
+  }
+}}%%
 flowchart TB
     Client([Client]) -->|SubmitBid| API[API]
     API -->|Publish| SB[(Service Bus)]
@@ -32,14 +47,14 @@ flowchart TB
     Activities -.->|update| Table
     Comp -.->|update| Table
 
-    classDef entry fill:#263238,stroke:#90a4ae,color:#eceff1
-    classDef svc fill:#102a43,stroke:#4a90e2,color:#eceff1
-    classDef broker fill:#2d1b4e,stroke:#9b7cd6,color:#eceff1
-    classDef decision fill:#3d2f00,stroke:#e0b030,color:#fff6d8
-    classDef act fill:#123a2e,stroke:#3fb389,color:#e6fff6
-    classDef store fill:#1f3d3d,stroke:#5bb,color:#eee
-    classDef comp fill:#4a1f1f,stroke:#e77,color:#eee
-    classDef shared fill:#2b2b2b,stroke:#999,stroke-dasharray:4 3,color:#eee
+    classDef entry fill:#2d3139,stroke:#8b949e,color:#f0f3f6
+    classDef svc fill:#15344d,stroke:#58a6ff,color:#f0f3f6
+    classDef broker fill:#3b2461,stroke:#bc8cff,color:#f0f3f6
+    classDef decision fill:#4d3a0a,stroke:#f2b84b,color:#fff3d6
+    classDef act fill:#113828,stroke:#3fb950,color:#e9fbef
+    classDef store fill:#0d3b45,stroke:#39c5cf,color:#e9fcff
+    classDef comp fill:#4a1515,stroke:#f85149,color:#ffecec
+    classDef shared fill:#2d3139,stroke:#8b949e,stroke-dasharray:4 3,color:#f0f3f6
 
     class Client entry
     class API,Consumer svc

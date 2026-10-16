@@ -1,6 +1,6 @@
 ## Flow Diagram
 
- `ArtAuction.API` accepts a bid and publishes `ArtWorkBid` onto Service Bus. `ArtAuction.Consumer` consumes it, records the bid in Table Storage, then drives a MassTransit routing slip through courier activities to accept or reject the bid. If a later activity in the slip faults, MassTransit walks back through the already-executed activities' `Compensate` methods and update the state of the entity on Table Storage.
+`ArtAuction.API` accepts a bid and publishes `ArtWorkBid` onto Service Bus. `ArtAuction.Consumer` consumes it, records the bid in Table Storage, and then drives a MassTransit routing slip through Courier activities to accept or reject the bid. If a later activity in the slip faults, MassTransit walks back through the `Compensate` methods of the activities that already ran, updating the entity's state in Table Storage.
 
 ```mermaid
 %%{init: {
@@ -72,12 +72,12 @@ flowchart TB
 ```
 
 ## Architecture Choice
-I was planning to deploy resources with private endpoint in shared virtual network, but service bus premium sku is needed for private networking which is too expensive, but was happy experiment Network security perimeter which acreates logical network boundaries around your platform-as-a-service (PaaS) resources that you deploy outside your virtual networks. With my current profile setting will only fulfil request if resources live in the same subsription.
+I was planning to deploy the resources with private endpoints in a shared virtual network, but private networking on Service Bus needs the Premium SKU, which is too expensive. Instead, I was happy to experiment with Network Security Perimeter, which creates a logical network boundary around platform-as-a-service (PaaS) resources deployed outside your virtual networks. With my current profile settings, it only allows requests between resources in the same subscription.
 
 TODO: Create Azure Infra diagram
 
 ## Generate Token from Identity Provider using PowerShell
-I'm tired of using postman a bloated ass application that forces me to log in.
+I'm tired of using Postman, a bloated ass application that forces me to log in.
 ```
 $body = @{
     grant_type    = "client_credentials"
@@ -93,17 +93,16 @@ $response.access_token
 
 ## Application Registration 
 
-There are three application registration:
-- **Art-Auction-Github-Deployment** :  Which acts the deployment identity which has OIDC federated credentials. The identity has `contributor` role on the subscription since it's create RG on the subscription scope level. Also `
-Role Based Access Control Administrator` for role assignments of the managed identities.
+There are three application registrations:
+- **Art-Auction-Github-Deployment**: The deployment identity, which uses OIDC federated credentials. It has the `Contributor` role on the subscription because it creates the resource group at subscription scope, and `Role Based Access Control Administrator` so it can assign roles to the managed identities.
 
-- **Art-Auction-API**: which represent the API and contains roles needed for role based access.
+- **Art-Auction-API**: Represents the API and defines the roles used for role-based access.
 
-- **Art-Auction-Api-Client** - Which is used by client along with a secret generate the JWT token and via API permison that I grant can use the role created in Art-Auction-API application registration.
+- **Art-Auction-Api-Client**: Used by the client, along with a secret, to generate the JWT. The API permission I granted lets it use the role defined in the Art-Auction-API registration.
 
 
 ## Container Registry
-Allow the container app to pull from the container registry. This now done with bicep, but just to noted if resources are hand cranked.
+Allow the container app to pull from the container registry. This is now handled in Bicep, but I'm noting it here in case the resources are hand cranked.
 
 ```bash
 az containerapp registry set --name art-auction-api --resource-group MassTransit-Playground --server masstransitcontainerregistry.azurecr.io --identity system
@@ -111,9 +110,9 @@ az containerapp registry set --name art-auction-api --resource-group MassTransit
 
 ## Why Container Apps Use User-Assigned Identities
 
-The Container Apps scale rules needs to have access to the service bus to establish scale rules. I was having difficulty using system assigned identities since this check was happening before the system assigned identity was created. So had to create user defined managed identity ahead of time with the permission on the service and add the association to the container app. The client id of the user defined managed identity is set in the environment variable of the container app in bicep and pick it up from when the app runs.
+The Container Apps scale rules need access to Service Bus to work. I had trouble using a system-assigned identity because this check ran before the identity was created. So I created a user-assigned managed identity ahead of time, gave it the permissions it needs on Service Bus, and associated it with the container app. Bicep sets the identity's client ID as an environment variable on the container app, and the app picks it up at runtime.
 
-**Before (system-assigned) — circular deadlock :**
+**Before (system-assigned) — circular deadlock:**
 ```mermaid
 flowchart LR
     CA["containerApps<br/>(creates revision +<br/>KEDA SB scaler)"]

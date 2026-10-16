@@ -1,4 +1,4 @@
-## Architecture
+## Flow Diagram
 
  `ArtAuction.API` accepts a bid and publishes `ArtWorkBid` onto Service Bus. `ArtAuction.Consumer` consumes it, records the bid in Table Storage, then drives a MassTransit routing slip through courier activities to accept or reject the bid. If a later activity in the slip faults, MassTransit walks back through the already-executed activities' `Compensate` methods and update the state of the entity on Table Storage.
 
@@ -70,6 +70,12 @@ flowchart TB
     class Contract shared
     class IdP idp
 ```
+
+## Architecture Choice
+I was planning to deploy resources with private endpoint in shared virtual network, but service bus premium sku is needed for private networking which is too expensive, but was happy experiment Network security perimeter which acreates logical network boundaries around your platform-as-a-service (PaaS) resources that you deploy outside your virtual networks. With my current profile setting will only fulfil request if resources live in the same subsription.
+
+TODO: Create Azure Infra diagram
+
 ## Generate Token from Identity Provider using PowerShell
 I'm tired of using postman a bloated ass application that forces me to log in.
 ```
@@ -87,7 +93,7 @@ $response.access_token
 
 ## Application Registration 
 
-There are three application registration
+There are three application registration:
 - **Art-Auction-Github-Deployment** :  Which acts the deployment identity which has OIDC federated credentials. The identity has `contributor` role on the subscription since it's create RG on the subscription scope level. Also `
 Role Based Access Control Administrator` for role assignments of the managed identities.
 
@@ -115,12 +121,7 @@ custom: {
   metadata: { queueName: ..., namespace: serviceBusName, ... }
 }
 ```
-
-When Container Apps provisions a revision, it has to validate that scale rule's auth against Service Bus *as part of* bringing the revision online — not as a later step. With a system-assigned identity, the principal ID doesn't exist until the container app itself is created, so the role assignment (`Modules/roleAssignments.bicep`) can only run *after* the container app module finishes. But the container app can't finish until the scaler successfully authenticates, which needs the role assignment to already exist. That's a true circular dependency — no `dependsOn` ordering can resolve it, because the missing piece (the principal ID) is only produced by the exact step that's blocked waiting on something derived from it.
-
-In practice this showed up as both container apps failing with `Operation expired` after ~20 minutes, with zero revisions ever created and zero RBAC role assignments ever granted on the ACR/Service Bus/Storage Account.
-
-A user-assigned identity breaks the cycle: it's its own resource, so its principal ID is known immediately on creation, with no dependency on the container app. That makes the order a straight line — create identity, grant roles, then create the container app referencing the already-permissioned identity — instead of a cycle.
+Container Apps scale rules need to have access to the service bus to establish scale rules. I was having difficulty using system assigned identities since this check was happening before the system assigned identity was created. So had to create user defined managed identity ahead of time with the permission on the service but add associate that to the container app. The client id of the user defined managed identity is set in the environment variable of the container app in bicep and pick it up from when the app runs.
 
 **Before (system-assigned) — circular, deadlocks forever:**
 ```mermaid

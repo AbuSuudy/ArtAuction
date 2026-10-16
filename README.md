@@ -71,7 +71,7 @@ flowchart TB
     class IdP idp
 ```
 ## Generate Token from Identity Provider using PowerShell
-
+I'm tired of using postman a bloated ass application that forces me to log in.
 ```
 $body = @{
     grant_type    = "client_credentials"

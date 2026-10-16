@@ -19,7 +19,10 @@
   }
 }}%%
 flowchart TB
-    Client([Client]) -->|SubmitBid| API[API]
+    IdP[Entra ID<br/>App Registration]
+    Client([Client]) -->|Request JWT| IdP
+    IdP -->|Return JWT| Client
+    Client -->|SubmitBid| API[API]
     API -->|Publish| SB[(Service Bus)]
 
     Contract[["Message Contract"]]
@@ -44,8 +47,8 @@ flowchart TB
 
     AQ -. Fault .-> Comp
     BR -. Fault .-> Comp
-    Activities -.->|update| Table
-    Comp -.->|update| Table
+    Activities -->|update| Table
+    Comp -->|update| Table
 
     classDef entry fill:#2d3139,stroke:#8b949e,color:#f0f3f6
     classDef svc fill:#15344d,stroke:#58a6ff,color:#f0f3f6
@@ -55,6 +58,7 @@ flowchart TB
     classDef store fill:#0d3b45,stroke:#39c5cf,color:#e9fcff
     classDef comp fill:#4a1515,stroke:#f85149,color:#ffecec
     classDef shared fill:#2d3139,stroke:#8b949e,stroke-dasharray:4 3,color:#f0f3f6
+    classDef idp fill:#4a2f0a,stroke:#f0883e,color:#ffe9d6
 
     class Client entry
     class API,Consumer svc
@@ -64,6 +68,7 @@ flowchart TB
     class Table store
     class Comp,CAQ,CBA,CBR comp
     class Contract shared
+    class IdP idp
 ```
 
 ## Setup

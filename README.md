@@ -113,7 +113,7 @@ az containerapp registry set --name art-auction-api --resource-group MassTransit
 
 The Container Apps scale rules needs to have access to the service bus to establish scale rules. I was having difficulty using system assigned identities since this check was happening before the system assigned identity was created. So had to create user defined managed identity ahead of time with the permission on the service and add the association to the container app. The client id of the user defined managed identity is set in the environment variable of the container app in bicep and pick it up from when the app runs.
 
-**Before (system-assigned) — circular, deadlocks forever:**
+**Before (system-assigned) — circular deadlock :**
 ```mermaid
 flowchart LR
     CA["containerApps<br/>(creates revision +<br/>KEDA SB scaler)"]
@@ -126,7 +126,7 @@ flowchart LR
     style RA fill:#5a1f1f,stroke:#f66,color:#fff
 ```
 
-**After (user-assigned) — straight line, no cycle:**
+**After (user-assigned) — no deadlock:**
 ```mermaid
 flowchart LR
     MI["managedIdentities<br/>(own resource,<br/>principalId known<br/>immediately)"]

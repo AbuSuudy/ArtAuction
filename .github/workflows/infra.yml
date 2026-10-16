@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - "Infra/**"
+      - "src/Infra/**"
 
 permissions:
   id-token: write
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Lint Bicep templates
-        run: az bicep lint --file Infra/main.bicep
+        run: az bicep lint --file src/Infra/main.bicep
 
   resolve-images:
     name: Resolve Current Container Images
@@ -92,8 +92,8 @@ jobs:
           location: northeurope
           scope: subscription
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          template-file: Infra/main.bicep
-          parameters-file: Infra/Params/main.bicepparam
+          template-file: src/Infra/main.bicep
+          parameters-file: src/Infra/Params/main.bicepparam
           parameters: |
             imageOverrides: ${{ needs.resolve-images.outputs.overrides }}
           action-on-unmanage-resources: delete
@@ -123,8 +123,8 @@ jobs:
           location: northeurope
           scope: subscription
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          template-file: Infra/main.bicep
-          parameters-file: Infra/Params/main.bicepparam
+          template-file: src/Infra/main.bicep
+          parameters-file: src/Infra/Params/main.bicepparam
           validation-level: provider
 
   deploy:
@@ -150,8 +150,8 @@ jobs:
           location: northeurope
           scope: subscription
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          template-file: Infra/main.bicep
-          parameters-file: Infra/Params/main.bicepparam
+          template-file: src/Infra/main.bicep
+          parameters-file: src/Infra/Params/main.bicepparam
           parameters: |
             imageOverrides: ${{ needs.resolve-images.outputs.overrides }}
           action-on-unmanage-resources: delete

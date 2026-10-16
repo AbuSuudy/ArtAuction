@@ -3,12 +3,12 @@
     <File Path=".devcontainer/devcontainer.json" />
   </Folder>
   <Folder Name="/.github/">
-    <File Path=".github/workflows/api-container.yml" />
-    <File Path=".github/workflows/infra.yml" />
-    <File Path=".github/workflows/worker-container.yml" />
+    <File Path="../.github/workflows/api-container.yml" />
+    <File Path="../.github/workflows/infra.yml" />
+    <File Path="../.github/workflows/worker-container.yml" />
   </Folder>
   <Folder Name="/.github/Template/">
-    <File Path=".github/workflows/_build-and-push.yml" />
+    <File Path="../.github/workflows/_build-and-push.yml" />
   </Folder>
   <Folder Name="/Infra/">
     <File Path="Infra/main.bicep" />

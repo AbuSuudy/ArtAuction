@@ -9,12 +9,12 @@ EXPOSE 8080
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["ArtAuction.Consumer/ArtAuction.Consumer.csproj", "ArtAuction.Consumer/"]
-COPY ["ArtAuction.Contract/ArtAuction.Contract.csproj", "ArtAuction.Contract/"]
-RUN dotnet restore "./ArtAuction.Consumer/ArtAuction.Consumer.csproj"
+WORKDIR /build
+COPY ["src/ArtAuction.Consumer/ArtAuction.Consumer.csproj", "src/ArtAuction.Consumer/"]
+COPY ["src/ArtAuction.Contract/ArtAuction.Contract.csproj", "src/ArtAuction.Contract/"]
+RUN dotnet restore "./src/ArtAuction.Consumer/ArtAuction.Consumer.csproj"
 COPY . .
-WORKDIR "/src/ArtAuction.Consumer"
+WORKDIR "/build/src/ArtAuction.Consumer"
 RUN dotnet build "./ArtAuction.Consumer.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage

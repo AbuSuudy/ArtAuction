@@ -31,8 +31,8 @@ on:
     branches:
       - main
     paths:
-      - "ArtAuction.Consumer/**"
-      - "ArtAuction.Contract/**"
+      - "src/ArtAuction.Consumer/**"
+      - "src/ArtAuction.Contract/**"
 
 permissions:
   id-token: write
@@ -44,7 +44,7 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'build_and_deploy_container')
     uses: ./.github/workflows/_build-and-push.yml
     with:
-      dockerfile: ArtAuction.Consumer/Dockerfile
+      dockerfile: src/ArtAuction.Consumer/Dockerfile
       image-name: ca-artauctionconsumer-neu-001
 
   deploy:

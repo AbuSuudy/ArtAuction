@@ -10,12 +10,12 @@ EXPOSE 8081
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["ArtAuction.API/ArtAuction.API.csproj", "ArtAuction.API/"]
-COPY ["ArtAuction.Contract/ArtAuction.Contract.csproj", "ArtAuction.Contract/"]
-RUN dotnet restore "./ArtAuction.API/ArtAuction.API.csproj"
+WORKDIR /build
+COPY ["src/ArtAuction.API/ArtAuction.API.csproj", "src/ArtAuction.API/"]
+COPY ["src/ArtAuction.Contract/ArtAuction.Contract.csproj", "src/ArtAuction.Contract/"]
+RUN dotnet restore "./src/ArtAuction.API/ArtAuction.API.csproj"
 COPY . .
-WORKDIR "/src/ArtAuction.API"
+WORKDIR "/build/src/ArtAuction.API"
 RUN dotnet build "./ArtAuction.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage

@@ -22,7 +22,7 @@ flowchart TB
     IdP[Entra ID<br/>App Registration]
     Client([Client]) -->|Request JWT| IdP
     IdP -->|Return JWT| Client
-    Client -->|SubmitBid| API[API]
+    Client -->|Submit Bid| API[API]
     API -->|Publish| SB[(Service Bus)]
 
     Contract[["Message Contract"]]
@@ -30,7 +30,7 @@ flowchart TB
     Contract -.- Consumer[Consumer]
 
     SB --> Consumer
-    Consumer -->|Add entity| Table[(Table Storage)]
+    Consumer -->|Add Entity| Table[(Table Storage)]
     Consumer --> RS{"≥80% price?"}
 
     subgraph Activities["Routing Slip"]
@@ -47,8 +47,8 @@ flowchart TB
 
     AQ -. Fault .-> Comp
     BR -. Fault .-> Comp
-    Activities -->|update| Table
-    Comp -->|update| Table
+    Activities -->|"Update<br/>Entity State"| Table
+    Comp -->|"Update<br/>Entity State"| Table
 
     classDef entry fill:#2d3139,stroke:#8b949e,color:#f0f3f6
     classDef svc fill:#15344d,stroke:#58a6ff,color:#f0f3f6

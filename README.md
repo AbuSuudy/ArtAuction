@@ -70,24 +70,35 @@ flowchart TB
     class Contract shared
     class IdP idp
 ```
+## Generate Token from Identity Provider using PowerShell
 
-## Setup
-Create identity used for deployment and sett the output JSON AZURE_CREDENTIALS in GitHub action secrets 
-```bash
-az ad sp create-for-rbac --name deployment-credentials  --json-auth --output json
 ```
-Assign that identity to be an owner at the subscription level since it will be used to create: Resouce Group, Resources in the infra pipeline.
-```
-az role assignment create --assignee-object-id 04f2c0c7-8d8c-4b53-a66d-b94ba77a881f --assignee-principal-type ServicePrincipal --role "Owner" --scope /subscriptions/15cec3e2-1cd9-4276-b215-5370e2425b38
+$body = @{
+    grant_type    = "client_credentials"
+    client_id     = "345e735e-327c-429b-946b-39d7edaf4c9c"
+    client_secret = ""
+    scope         = "api://8036976b-35ee-4425-bebf-76ede18b97d0/.default"
+}
+
+$response = Invoke-RestMethod -Uri "https://login.microsoftonline.com/3853050a-07fd-4295-9fec-e56ecda64939/oauth2/v2.0/token" -Method Post -Body $body
+
+$response.access_token
 ```
 
-Assign as deployment stack contributor 
-```
-az role assignment create --assignee 04f2c0c7-8d8c-4b53-a66d-b94ba77a881f --role bf7f8882-3383-422a-806a-6526c631a88a --scope /subscriptions/15cec3e2-1cd9-4276-b215-5370e2425b38
-```
+## Application Registration 
+
+There are three application registration
+- **Art-Auction-Github-Deployment** :  Which acts the deployment identity which has OIDC federated credentials. The identity has `contributor` role on the subscription since it's create RG on the subscription scope level. Also `
+Role Based Access Control Administrator` for role assignments of the managed identities.
+
+- **Art-Auction-API**: which represent the API and contains roles needed for role based access.
+
+- **Art-Auction-Api-Client** - Which is used by client along with a secret generate the JWT token and via API permison that I grant can use the role created in Art-Auction-API application registration.
+
 
 ## Container Registry
-Allow the container app to pull from the container registry. This is done in my infra pipeline, but worth noting for the future. I was having issues setting this in the registry property in the AVM for the container.
+Allow the container app to pull from the container registry. This now done with bicep, but just to noted if resources are hand cranked.
+
 ```bash
 az containerapp registry set --name art-auction-api --resource-group MassTransit-Playground --server masstransitcontainerregistry.azurecr.io --identity system
 ```
@@ -138,23 +149,4 @@ flowchart LR
     style CA2 fill:#1f3d1f,stroke:#6f6,color:#fff
 ```
 
-## Delete Resources From Deployment Stack 
 
-```
-Remove-AzSubscriptionDeploymentStack -Name "Development" -ActionOnUnmanage DeleteAll -Force 
-```
-
-## Generate Token from Identity Provider using PowerShell
-
-```
-$body = @{
-    grant_type    = "client_credentials"
-    client_id     = "345e735e-327c-429b-946b-39d7edaf4c9c"
-    client_secret = ""
-    scope         = "api://8036976b-35ee-4425-bebf-76ede18b97d0/.default"
-}
-
-$response = Invoke-RestMethod -Uri "https://login.microsoftonline.com/3853050a-07fd-4295-9fec-e56ecda64939/oauth2/v2.0/token" -Method Post -Body $body
-
-$response.access_token
-```

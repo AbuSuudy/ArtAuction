@@ -11,7 +11,6 @@ A playground for MassTransit routing slips on Azure. You submit a bid on a piece
 | `src/ArtAuction.Contract` | Shared message contracts and Table Storage entities. |
 | `src/ArtAuction.AppHost` | Aspire AppHost for running everything locally. |
 | `src/Infra` | Bicep for all the Azure resources, deployed as a deployment stack. |
-| `.github/workflows` | Pipelines for the infra, the API container and the worker container. |
 
 ## Flow Diagram
 
@@ -91,31 +90,6 @@ I was planning to deploy the resources with private endpoints in a shared virtua
 
 TODO: Create Azure Infra diagram
 
-## Running Locally
-
-Prerequisites: the .NET 10 SDK and Docker (or the dev container in `.devcontainer`, which has both).
-
-```bash
-dotnet run --project src/ArtAuction.AppHost
-```
-
-Locally, the AppHost swaps the Azure services for containers: RabbitMQ replaces Service Bus, and Azurite replaces Table Storage. Auth is switched off on the API through `DisableAuthForLocalDev` in `launchSettings.json`, so you don't need a token. In Development, the Scalar API reference is served at `/scalar`.
-
-## Submitting a Bid
-
-There are two hard-coded artworks: `1` (asking price 500,000) and `2` (asking price 100,000).
-
-```bash
-curl -X POST https://<api-host>/api/Bid/SubmitBid \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{ "id": 1, "bid": 450000 }'
-```
-
-The API returns `202 Accepted`, and the result lands in the `BidStatus` table: `Accepted` then `Aquired`, or `Rejected`. Compensations are written to the `BidCompensation` table. In Azure, the caller needs the `Bid.Submit` app role (see [Application Registration](#application-registration)).
-
-Both apps expose `/health/startup`, `/health/live` and `/health/ready` for the Container Apps probes.
-
 ## Generate Token from Identity Provider using PowerShell
 I'm tired of using Postman, a bloated ass application that forces me to log in.
 ```
@@ -147,14 +121,6 @@ Allow the container app to pull from the container registry. This is now handled
 ```bash
 az containerapp registry set --name ca-artauctionapi-neu-001 --resource-group RG-ARTAUCTION-NEU-001 --server crartauctionneu001.azurecr.io --identity <user-assigned-identity-resource-id>
 ```
-
-## CI/CD
-
-All pipelines log in to Azure with the **Art-Auction-Github-Deployment** identity through OIDC, so there are no secrets in GitHub. They need these repository variables: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `RESOURCE_GROUP` and `REGISTRY_LOGIN_SERVER`.
-
-- **Infra** (`infra.yml`): Lints the Bicep, then runs a validate and a what-if before deploying a subscription-scoped deployment stack. Before deploying, it looks up the image each container app is currently running and passes it back in, so an infra-only deploy doesn't reset the apps to the placeholder image.
-- **API** (`api-container.yml`): Builds and pushes the image, then deploys it to a new revision that receives no traffic. The new revision gets a smoke test against `/health/ready` and is labelled blue or green. Traffic only moves when you run the workflow manually with `switch_traffic` and pick a revision. Revisions older than 7 days that aren't blue or green are deactivated.
-- **Worker** (`worker-container.yml`): Builds, pushes and deploys straight away, since the consumer runs in Single revision mode. To roll back, run it with `rollback_to_revision`, which redeploys an older revision's image as a new revision.
 
 ## Why Container Apps Use User-Assigned Identities
 

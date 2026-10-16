@@ -1,3 +1,23 @@
+## Architecture
+
+**Application & message flow** — `ArtAuction.API` accepts a bid and publishes `ArtWorkBid` onto Service Bus. `ArtAuction.Consumer` consumes it, records the bid in Table Storage, then drives a MassTransit routing slip through courier activities to accept or reject the bid.
+
+```mermaid
+flowchart LR
+    Client[Client] -->|POST api/Bid/SubmitBid| API[ArtAuction.API]
+    API -->|Publish ArtWorkBid| SB[(Azure Service Bus)]
+    SB --> Consumer[ArtAuction.Consumer<br/>ArtWorkBidConsumer]
+    Consumer -->|Add BidEntity| Table[(Table Storage<br/>BidStatus)]
+    Consumer -->|Build routing slip| RS{Bid ≥ 80% of price?}
+    RS -->|Yes| BidAccepted[BidAccepted Activity]
+    BidAccepted --> Aquired[Aquired Activity]
+    RS -->|No| BidRejected[BidRejected Activity]
+
+    ArtAuction.Contract[["ArtAuction.Contract<br/>(shared messages: ArtWorkBid, BidEntity, queue names)"]]
+    API -.-> ArtAuction.Contract
+    Consumer -.-> ArtAuction.Contract
+```
+
 ## Setup
 Create identity used for deployment and sett the output JSON AZURE_CREDENTIALS in GitHub action secrets 
 ```bash

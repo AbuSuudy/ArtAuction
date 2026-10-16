@@ -1,21 +1,54 @@
 ## Architecture
 
-**Application & message flow** — `ArtAuction.API` accepts a bid and publishes `ArtWorkBid` onto Service Bus. `ArtAuction.Consumer` consumes it, records the bid in Table Storage, then drives a MassTransit routing slip through courier activities to accept or reject the bid.
+**Application & message flow** — `ArtAuction.API` accepts a bid and publishes `ArtWorkBid` onto Service Bus. `ArtAuction.Consumer` consumes it, records the bid in Table Storage, then drives a MassTransit routing slip through courier activities to accept or reject the bid. If a later activity in the slip faults, MassTransit walks back through the already-executed activities' `Compensate` methods, each of which writes a `*_Compensated` status back to Table Storage.
 
 ```mermaid
-flowchart LR
-    Client[Client] -->|POST api/Bid/SubmitBid| API[ArtAuction.API]
-    API -->|Publish ArtWorkBid| SB[(Azure Service Bus)]
-    SB --> Consumer[ArtAuction.Consumer<br/>ArtWorkBidConsumer]
-    Consumer -->|Add BidEntity| Table[(Table Storage<br/>BidStatus)]
-    Consumer -->|Build routing slip| RS{Bid ≥ 80% of price?}
-    RS -->|Yes| BidAccepted[BidAccepted Activity]
-    BidAccepted --> Aquired[Aquired Activity]
-    RS -->|No| BidRejected[BidRejected Activity]
+flowchart TB
+    Client([Client]) -->|SubmitBid| API[API]
+    API -->|Publish| SB[(Service Bus)]
 
-    ArtAuction.Contract[["ArtAuction.Contract<br/>(shared messages: ArtWorkBid, BidEntity, queue names)"]]
-    API -.-> ArtAuction.Contract
-    Consumer -.-> ArtAuction.Contract
+    Contract[["Message Contract"]]
+    API -.- Contract
+    Contract -.- Consumer[Consumer]
+
+    SB --> Consumer
+    Consumer -->|Add entity| Table[(Table Storage)]
+    Consumer --> RS{"≥80% price?"}
+
+    subgraph Activities["Routing Slip"]
+        direction LR
+        RS -->|Yes| BA[BidAccepted] --> AQ[Aquired]
+        RS -->|No| BR[BidRejected]
+    end
+
+    subgraph Comp["Compensate · reverse order"]
+        direction LR
+        CAQ[Aquired] --> CBA[BidAccepted]
+        CBR[BidRejected]
+    end
+
+    AQ -. Fault .-> Comp
+    BR -. Fault .-> Comp
+    Activities -.->|update| Table
+    Comp -.->|update| Table
+
+    classDef entry fill:#263238,stroke:#90a4ae,color:#eceff1
+    classDef svc fill:#102a43,stroke:#4a90e2,color:#eceff1
+    classDef broker fill:#2d1b4e,stroke:#9b7cd6,color:#eceff1
+    classDef decision fill:#3d2f00,stroke:#e0b030,color:#fff6d8
+    classDef act fill:#123a2e,stroke:#3fb389,color:#e6fff6
+    classDef store fill:#1f3d3d,stroke:#5bb,color:#eee
+    classDef comp fill:#4a1f1f,stroke:#e77,color:#eee
+    classDef shared fill:#2b2b2b,stroke:#999,stroke-dasharray:4 3,color:#eee
+
+    class Client entry
+    class API,Consumer svc
+    class SB broker
+    class RS decision
+    class BA,AQ,BR act
+    class Table store
+    class Comp,CAQ,CBA,CBR comp
+    class Contract shared
 ```
 
 ## Setup

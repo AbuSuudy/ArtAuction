@@ -1,6 +1,6 @@
 # ArtAuction
 
-A playground for MassTransit routing slips on Azure. You submit a bid on a piece of art. If it's at least 80% of the asking price, the bid is accepted and the art is acquired; otherwise it's rejected. Everything runs on Azure Container Apps, with Service Bus, Table Storage and Entra ID.
+A playground for MassTransit routing slips on Azure. You submit a bid on a piece of art. If it's at least 80% of the asking price, the bid is accepted and the art is acquired; otherwise it's rejected. Everything runs on Azure Container Apps, with Service Bus, Table Storage and Entra ID. You can run  locally with Aspire and opted to use Rabbit MQ locally over the Azure Service Bus Emulator. Due to Mass Transit abstraction outside of configuration in the program.cs  nothing else have to be updated 
 
 ## Project Structure
 

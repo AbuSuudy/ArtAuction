@@ -111,17 +111,7 @@ az containerapp registry set --name art-auction-api --resource-group MassTransit
 
 ## Why Container Apps Use User-Assigned Identities
 
-The container apps use a user-assigned managed identity (`Infra/Modules/managedIdentities.bicep`) instead of `systemAssigned: true`. This isn't a style choice — system-assigned identity caused a real deployment deadlock.
-
-The consumer app's KEDA scale rule authenticates to Service Bus using the container app's identity:
-```bicep
-custom: {
-  type: 'azure-servicebus'
-  identity: 'system'
-  metadata: { queueName: ..., namespace: serviceBusName, ... }
-}
-```
-Container Apps scale rules need to have access to the service bus to establish scale rules. I was having difficulty using system assigned identities since this check was happening before the system assigned identity was created. So had to create user defined managed identity ahead of time with the permission on the service but add associate that to the container app. The client id of the user defined managed identity is set in the environment variable of the container app in bicep and pick it up from when the app runs.
+The Container Apps scale rules needs to have access to the service bus to establish scale rules. I was having difficulty using system assigned identities since this check was happening before the system assigned identity was created. So had to create user defined managed identity ahead of time with the permission on the service and add the association to the container app. The client id of the user defined managed identity is set in the environment variable of the container app in bicep and pick it up from when the app runs.
 
 **Before (system-assigned) — circular, deadlocks forever:**
 ```mermaid

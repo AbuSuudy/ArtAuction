@@ -14,7 +14,7 @@ A playground for MassTransit routing slips on Azure. You submit a bid on a piece
 
 ## Flow Diagram
 
-`ArtAuction.API` accepts a bid and publishes `ArtWorkBid` onto Service Bus. `ArtAuction.Consumer` consumes it, records the bid in Table Storage, and then drives a MassTransit routing slip through Courier activities to accept or reject the bid. If a later activity in the slip faults, MassTransit walks back through the `Compensate` methods of the activities that already ran, updating the entity's state in Table Storage.
+`ArtAuction.API` accepts a bid and publishes `ArtWorkBid` onto the bus (Service Bus in Azure, RabbitMQ when running locally). `ArtAuction.Consumer` consumes it, records the bid in Table Storage, and then drives a MassTransit routing slip through Courier activities to accept or reject the bid. If a later activity in the slip faults, MassTransit walks back through the `Compensate` methods of the activities that already ran, updating the entity's state in Table Storage.
 
 ```mermaid
 %%{init: {
@@ -35,9 +35,9 @@ A playground for MassTransit routing slips on Azure. You submit a bid on a piece
 flowchart TB
     IdP[Entra ID<br/>App Registration]
     Client([Client]) -->|Request JWT| IdP
-    IdP -->|Return JWT| Client
+    IdP -->|"Return JWT<br/>role: Bid.Submit"| Client
     Client -->|Submit Bid| API[API]
-    API -->|Publish| SB[(Service Bus)]
+    API -->|Publish| SB[("Service Bus - Deployed<br/>RabbitMQ - Locally")]
 
     Contract[["Message Contract"]]
     API -.- Contract

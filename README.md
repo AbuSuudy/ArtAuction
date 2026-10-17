@@ -88,7 +88,7 @@ flowchart TB
 ## Architecture Choice
 I was planning to deploy the resources with private endpoints in a shared virtual network, but private networking on Service Bus needs the Premium SKU, which is too expensive. Instead, I was happy to experiment with Network Security Perimeter, which creates a logical network boundary around platform-as-a-service (PaaS) resources deployed outside your virtual networks. With my current profile settings, it only allows requests between resources in the same subscription.
 
-<img width="1150" height="635" alt="Exported-Diagram (3)" src="https://github.com/user-attachments/assets/b79f53c6-d8c2-4ecf-8829-f65b8d0abade" />
+<img width="1585" height="650" alt="Exported-Diagram (5)" src="https://github.com/user-attachments/assets/8a473fda-dcc7-4d88-b886-83e439ca5031" />
 
 
 ## Generate Token from Identity Provider using PowerShell

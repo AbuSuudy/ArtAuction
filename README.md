@@ -1,4 +1,4 @@
-# ArtAuction
+# Art Auction
 
 A playground for MassTransit routing slips on Azure. You submit a bid on a piece of art. If it's at least 80% of the asking price, the bid is accepted and the art is acquired; otherwise it's rejected. Everything runs on Azure Container Apps, with Service Bus, Table Storage and Entra ID. You can run  locally with Aspire and opted to use Rabbit MQ locally over the Azure Service Bus Emulator. Due to Mass Transit abstraction outside of configuration in the program.cs  nothing else have to be updated 
 
@@ -88,7 +88,8 @@ flowchart TB
 ## Architecture Choice
 I was planning to deploy the resources with private endpoints in a shared virtual network, but private networking on Service Bus needs the Premium SKU, which is too expensive. Instead, I was happy to experiment with Network Security Perimeter, which creates a logical network boundary around platform-as-a-service (PaaS) resources deployed outside your virtual networks. With my current profile settings, it only allows requests between resources in the same subscription.
 
-TODO: Create Azure Infra diagram
+<img width="1150" height="635" alt="Exported-Diagram (3)" src="https://github.com/user-attachments/assets/b79f53c6-d8c2-4ecf-8829-f65b8d0abade" />
+
 
 ## Generate Token from Identity Provider using PowerShell
 I'm tired of using Postman, a bloated ass application that forces me to log in.

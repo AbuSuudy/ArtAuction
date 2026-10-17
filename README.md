@@ -93,7 +93,7 @@ I was planning to deploy the resources with private endpoints in a shared virtua
 
 
 ## Generate Token from Identity Provider using PowerShell
-I'm tired of using Postman, a bloated ass application that forces me to log in.
+
 ```
 $body = @{
     grant_type    = "client_credentials"

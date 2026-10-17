@@ -95,6 +95,8 @@ I was planning to deploy the resources with private endpoints in a shared virtua
 ## Generate Token from Identity Provider using PowerShell
 
 ```
+$tenantId = "3853050a-07fd-4295-9fec-e56ecda64939"
+
 $body = @{
     grant_type    = "client_credentials"
     client_id     = "345e735e-327c-429b-946b-39d7edaf4c9c"
@@ -102,9 +104,13 @@ $body = @{
     scope         = "api://8036976b-35ee-4425-bebf-76ede18b97d0/.default"
 }
 
-$response = Invoke-RestMethod -Uri "https://login.microsoftonline.com/3853050a-07fd-4295-9fec-e56ecda64939/oauth2/v2.0/token" -Method Post -Body $body
+$response = Invoke-RestMethod `
+    -Uri "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token" `
+    -Method Post `
+    -Body $body
 
 $response.access_token
+
 ```
 
 ## Application Registration 

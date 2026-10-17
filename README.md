@@ -59,8 +59,9 @@ flowchart TB
         CBR[BidRejected]
     end
 
-    AQ -. Fault .-> Comp
-    BR -. Fault .-> Comp
+    AQ -->|Fault| Comp
+    BR -->|Fault| Comp
+    linkStyle 13,14 stroke:#f85149,stroke-width:2px,color:#ffffff
     Activities -->|"Update<br/>Entity State"| Table
     Comp -->|"Update<br/>Entity State"| Table
 
